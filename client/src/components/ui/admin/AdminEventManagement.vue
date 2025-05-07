@@ -1,19 +1,23 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table'
 import { toast } from 'vue-sonner'
-import { Event, EventAgendaItem, EventSpeaker, EventCategory, AvailabilityStatus } from '@/types/event'
+import type { Event, EventCategory } from '@/types/event'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 
 // Events list
 const events = ref<Event[]>([])
 const loading = ref<boolean>(true)
 const error = ref<string>('')
-const showEventForm = ref<boolean>(false)
+const showEventDialog = ref<boolean>(false) // Renamed from showEventForm to showEventDialog
 const isEditing = ref<boolean>(false)
 const currentEvent = ref<Event | null>(null)
+const showDeleteConfirm = ref<boolean>(false)
+const eventToDelete = ref<number | null>(null)
 
 // Sample categories for filtering
 const categories: EventCategory[] = [
@@ -26,15 +30,6 @@ const categories: EventCategory[] = [
 
 onMounted(async () => {
   try {
-    // TODO: Replace with actual API call to fetch events
-    // const response = await fetch('/api/admin/events', {
-    //   headers: {
-    //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-    //   }
-    // })
-    // events.value = await response.json()
-    
-    // For now, using sample data
     setTimeout(() => {
       events.value = [
         {
@@ -129,20 +124,14 @@ const createEvent = () => {
     speakers: [{ name: '', title: '', image: '' }]
   }
   isEditing.value = false
-  showEventForm.value = true
-  
-  // Scroll to top
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  showEventDialog.value = true
 }
 
 // Edit existing event
 const editEvent = (event: Event) => {
   currentEvent.value = { ...event }
   isEditing.value = true
-  showEventForm.value = true
-  
-  // Scroll to top
-  window.scrollTo({ top: 0, behavior: 'smooth' })
+  showEventDialog.value = true
   
   toast.info('Editing event', {
     description: `You are now editing: ${event.title}`
@@ -150,69 +139,32 @@ const editEvent = (event: Event) => {
 }
 
 // Delete event
-const deleteEvent = async (eventId: number) => {
-  try {
-    // First find the event to get its title
-    const eventToDelete = events.value.find(e => e.id === eventId)
-    
-    if (!confirm(`Are you sure you want to delete "${eventToDelete?.title}"? This action cannot be undone.`)) {
-      return
-    }
-    
-    // TODO: Replace with actual API call to delete event
-    // await fetch(`/api/admin/events/${eventId}`, {
-    //   method: 'DELETE',
-    //   headers: {
-    //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-    //   }
-    // })
-    
-    // For now, simulate deletion
-    events.value = events.value.filter(event => event.id !== eventId)
-    
+const deleteEvent = (id: number) => {
+  eventToDelete.value = id
+  showDeleteConfirm.value = true
+}
+
+// Confirm delete
+const confirmDelete = () => {
+  if (eventToDelete.value === null) return
+  
+  const index = events.value.findIndex(event => event.id === eventToDelete.value)
+  if (index !== -1) {
+    events.value.splice(index, 1)
     toast.success('Event deleted', {
-      description: `${eventToDelete?.title} has been successfully deleted`
-    })
-  } catch (err) {
-    toast.error('Failed to delete event', {
-      description: 'Please try again later'
+      description: 'Event has been successfully deleted'
     })
   }
+  
+  showDeleteConfirm.value = false
+  eventToDelete.value = null
 }
 
 // Save event (create or update)
 const saveEvent = async (eventData: Event) => {
   try {
-    // TODO: Replace with actual API call to create/update event
-    // const method = isEditing.value ? 'PUT' : 'POST'
-    // const url = isEditing.value ? `/api/admin/events/${eventData.id}` : '/api/admin/events'
-    // const formData = new FormData()
-    
-    // // Add event data to FormData
-    // Object.entries(eventData).forEach(([key, value]) => {
-    //   if (key !== 'agenda' && key !== 'speakers') {
-    //     formData.append(key, value.toString())
-    //   }
-    // })
-    
-    // // Add agenda and speakers as JSON strings
-    // formData.append('agenda', JSON.stringify(eventData.agenda))
-    // formData.append('speakers', JSON.stringify(eventData.speakers))
-    
-    // const response = await fetch(url, {
-    //   method,
-    //   headers: {
-    //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-    //   },
-    //   body: formData
-    // })
-    
-    // const result = await response.json()
-    
-    // For now, simulate API response
     setTimeout(() => {
       if (isEditing.value) {
-        // Update existing event
         const index = events.value.findIndex(e => e.id === eventData.id)
         if (index !== -1) {
           events.value[index] = { ...eventData }
@@ -221,7 +173,6 @@ const saveEvent = async (eventData: Event) => {
           })
         }
       } else {
-        // Create new event with generated ID
         const newEvent = {
           ...eventData,
           id: Math.max(0, ...events.value.map(e => e.id)) + 1
@@ -232,7 +183,7 @@ const saveEvent = async (eventData: Event) => {
         })
       }
       
-      showEventForm.value = false
+      showEventDialog.value = false
       currentEvent.value = null
     }, 800)
   } catch (err) {
@@ -245,7 +196,7 @@ const saveEvent = async (eventData: Event) => {
 // Cancel form
 const cancelForm = () => {
   if (confirm('Are you sure you want to cancel? Any unsaved changes will be lost.')) {
-    showEventForm.value = false
+    showEventDialog.value = false
     currentEvent.value = null
     toast.info('Changes discarded', {
       description: 'You have cancelled the form'
@@ -255,7 +206,7 @@ const cancelForm = () => {
 
 // Format date for display
 const formatDate = (dateString: string) => {
-  const options = { year: 'numeric', month: 'short', day: 'numeric' }
+  const options: any = { year: 'numeric', month: 'short', day: 'numeric' }
   return new Date(dateString).toLocaleDateString(undefined, options)
 }
 
@@ -282,7 +233,7 @@ const getAvailabilityStatus = (attendees: number, capacity: number) => {
         <h1 class="text-2xl font-bold">Event Management</h1>
         <p class="text-muted-foreground">Create and manage your events</p>
       </div>
-      <Button v-if="!showEventForm" @click="createEvent" class="flex items-center">
+      <Button @click="createEvent" class="flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
@@ -307,7 +258,7 @@ const getAvailabilityStatus = (attendees: number, capacity: number) => {
     </div>
     
     <!-- Event List -->
-    <div v-else-if="!showEventForm">
+    <div v-else>
       <Card>
         <Table>
           <TableHeader>
@@ -359,22 +310,33 @@ const getAvailabilityStatus = (attendees: number, capacity: number) => {
               </TableCell>
               <TableCell>${{ event.price }}</TableCell>
               <TableCell class="text-right">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="h-8 text-primary mr-2"
-                  @click="editEvent(event)"
-                >
-                  Edit
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  class="h-8 text-destructive"
-                  @click="deleteEvent(event.id)"
-                >
-                  Delete
-                </Button>
+                <div class="flex space-x-2">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="ghost" @click="editEvent(event)">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Edit Event</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="ghost" @click="deleteEvent(event.id)">
+                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Delete Event</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
               </TableCell>
             </TableRow>
           </TableBody>
@@ -392,339 +354,356 @@ const getAvailabilityStatus = (attendees: number, capacity: number) => {
       </div>
     </div>
     
-    <!-- Event Form -->
-    <div v-else>
-      <Card>
-        <CardHeader>
-          <CardTitle>{{ isEditing ? 'Edit Event' : 'Create New Event' }}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form @submit.prevent="saveEvent(currentEvent)" class="space-y-6" v-if="currentEvent">
-            <!-- Basic Information -->
-            <div>
-              <h3 class="text-lg font-semibold mb-4">Basic Information</h3>
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label for="title" class="block text-sm font-medium mb-1">Event Title</label>
+    <!-- Delete Confirmation Dialog -->
+    <Dialog v-model:open="showDeleteConfirm">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Confirm Event Deletion</DialogTitle>
+          <DialogDescription>
+            Are you sure you want to delete this event? This action cannot be undone.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter class="mt-4">
+          <Button variant="outline" @click="showDeleteConfirm = false">Cancel</Button>
+          <Button variant="destructive" @click="confirmDelete">Delete Event</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    
+    <!-- Event Form Dialog -->
+    <Dialog v-model:open="showEventDialog">
+      <DialogContent class="sm:max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>{{ isEditing ? 'Edit Event' : 'Create New Event' }}</DialogTitle>
+          <DialogDescription>
+            Enter the details for your event. Click save when you're done.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <form @submit.prevent="saveEvent(currentEvent)" class="space-y-6 mt-4 max-h-[70vh] overflow-y-auto pr-2" v-if="currentEvent">
+          <!-- Basic Information -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Basic Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label for="title" class="block text-sm font-medium mb-1">Event Title</label>
+                <input
+                  id="title"
+                  v-model="currentEvent.title"
+                  type="text"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label for="category" class="block text-sm font-medium mb-1">Category</label>
+                <select
+                  id="category"
+                  v-model="currentEvent.category"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                >
+                  <option v-for="category in categories" :key="category.value" :value="category.value">
+                    {{ category.label }}
+                  </option>
+                </select>
+              </div>
+              
+              <div>
+                <label for="date" class="block text-sm font-medium mb-1">Start Date</label>
+                <input
+                  id="date"
+                  v-model="currentEvent.date"
+                  type="date"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label for="time" class="block text-sm font-medium mb-1">Start Time</label>
+                <input
+                  id="time"
+                  v-model="currentEvent.time"
+                  type="time"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label for="endDate" class="block text-sm font-medium mb-1">End Date</label>
+                <input
+                  id="endDate"
+                  v-model="currentEvent.endDate"
+                  type="date"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label for="endTime" class="block text-sm font-medium mb-1">End Time</label>
+                <input
+                  id="endTime"
+                  v-model="currentEvent.endTime"
+                  type="time"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label for="location" class="block text-sm font-medium mb-1">Location Name</label>
+                <input
+                  id="location"
+                  v-model="currentEvent.location"
+                  type="text"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label for="address" class="block text-sm font-medium mb-1">Address</label>
+                <input
+                  id="address"
+                  v-model="currentEvent.address"
+                  type="text"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label for="price" class="block text-sm font-medium mb-1">Price ($)</label>
+                <input
+                  id="price"
+                  v-model.number="currentEvent.price"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label for="capacity" class="block text-sm font-medium mb-1">Capacity</label>
+                <input
+                  id="capacity"
+                  v-model.number="currentEvent.capacity"
+                  type="number"
+                  min="1"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                />
+              </div>
+              
+              <div class="md:col-span-2">
+                <label for="image" class="block text-sm font-medium mb-1">Image URL</label>
+                <input
+                  id="image"
+                  v-model="currentEvent.image"
+                  type="text"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  placeholder="https://example.com/image.jpg"
+                  required
+                />
+                <p class="mt-1 text-xs text-muted-foreground">
+                  Enter a URL for the event image. In a production environment, you would upload an image here.
+                </p>
+              </div>
+              
+              <div class="md:col-span-2">
+                <label for="description" class="block text-sm font-medium mb-1">Description</label>
+                <textarea
+                  id="description"
+                  v-model="currentEvent.description"
+                  rows="3"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                ></textarea>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Organizer Information -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Organizer Information</h3>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <label for="organizer" class="block text-sm font-medium mb-1">Organizer Name</label>
+                <input
+                  id="organizer"
+                  v-model="currentEvent.organizer"
+                  type="text"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label for="organizerEmail" class="block text-sm font-medium mb-1">Email</label>
+                <input
+                  id="organizerEmail"
+                  v-model="currentEvent.organizerEmail"
+                  type="email"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label for="organizerPhone" class="block text-sm font-medium mb-1">Phone</label>
+                <input
+                  id="organizerPhone"
+                  v-model="currentEvent.organizerPhone"
+                  type="tel"
+                  class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                  required
+                />
+              </div>
+            </div>
+          </div>
+          
+          <!-- Event Agenda -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Agenda</h3>
+            <Card v-for="(item, index) in currentEvent.agenda" :key="index" class="mb-3">
+              <CardContent class="p-3 flex space-x-4">
+                <div class="w-1/3">
+                  <label :for="`agenda-time-${index}`" class="block text-sm font-medium mb-1">Time</label>
                   <input
-                    id="title"
-                    v-model="currentEvent.title"
+                    :id="`agenda-time-${index}`"
+                    v-model="item.time"
                     type="text"
+                    placeholder="Time (e.g., 10:00 AM)"
                     class="w-full px-3 py-2 border border-input rounded-md bg-background"
                     required
                   />
                 </div>
-                
-                <div>
-                  <label for="category" class="block text-sm font-medium mb-1">Category</label>
-                  <select
-                    id="category"
-                    v-model="currentEvent.category"
+                <div class="flex-1">
+                  <label :for="`agenda-title-${index}`" class="block text-sm font-medium mb-1">Activity</label>
+                  <input
+                    :id="`agenda-title-${index}`"
+                    v-model="item.title"
+                    type="text"
+                    placeholder="Activity title"
                     class="w-full px-3 py-2 border border-input rounded-md bg-background"
                     required
+                  />
+                </div>
+                <div class="flex items-end">
+                  <Button 
+                    type="button" 
+                    variant="destructive" 
+                    size="sm"
+                    @click="currentEvent.agenda.splice(index, 1)"
+                    :disabled="currentEvent.agenda.length <= 1"
+                    class="h-10"
                   >
-                    <option v-for="category in categories" :key="category.value" :value="category.value">
-                      {{ category.label }}
-                    </option>
-                  </select>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </Button>
                 </div>
-                
-                <div>
-                  <label for="date" class="block text-sm font-medium mb-1">Start Date</label>
-                  <input
-                    id="date"
-                    v-model="currentEvent.date"
-                    type="date"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label for="time" class="block text-sm font-medium mb-1">Start Time</label>
-                  <input
-                    id="time"
-                    v-model="currentEvent.time"
-                    type="time"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label for="endDate" class="block text-sm font-medium mb-1">End Date</label>
-                  <input
-                    id="endDate"
-                    v-model="currentEvent.endDate"
-                    type="date"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label for="endTime" class="block text-sm font-medium mb-1">End Time</label>
-                  <input
-                    id="endTime"
-                    v-model="currentEvent.endTime"
-                    type="time"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label for="location" class="block text-sm font-medium mb-1">Location Name</label>
-                  <input
-                    id="location"
-                    v-model="currentEvent.location"
-                    type="text"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label for="address" class="block text-sm font-medium mb-1">Address</label>
-                  <input
-                    id="address"
-                    v-model="currentEvent.address"
-                    type="text"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label for="price" class="block text-sm font-medium mb-1">Price ($)</label>
-                  <input
-                    id="price"
-                    v-model.number="currentEvent.price"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label for="capacity" class="block text-sm font-medium mb-1">Capacity</label>
-                  <input
-                    id="capacity"
-                    v-model.number="currentEvent.capacity"
-                    type="number"
-                    min="1"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required
-                  />
-                </div>
-                
-                <div class="md:col-span-2">
-                  <label for="image" class="block text-sm font-medium mb-1">Image URL</label>
-                  <input
-                    id="image"
-                    v-model="currentEvent.image"
-                    type="text"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    placeholder="https://example.com/image.jpg"
-                    required
-                  />
-                  <p class="mt-1 text-xs text-muted-foreground">
-                    Enter a URL for the event image. In a production environment, you would upload an image here.
-                  </p>
-                </div>
-                
-                <div class="md:col-span-2">
-                  <label for="description" class="block text-sm font-medium mb-1">Description</label>
-                  <textarea
-                    id="description"
-                    v-model="currentEvent.description"
-                    rows="4"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required
-                  ></textarea>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Organizer Information -->
-            <div>
-              <h3 class="text-lg font-semibold mb-4">Organizer Information</h3>
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label for="organizer" class="block text-sm font-medium mb-1">Organizer Name</label>
-                  <input
-                    id="organizer"
-                    v-model="currentEvent.organizer"
-                    type="text"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label for="organizerEmail" class="block text-sm font-medium mb-1">Email</label>
-                  <input
-                    id="organizerEmail"
-                    v-model="currentEvent.organizerEmail"
-                    type="email"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <label for="organizerPhone" class="block text-sm font-medium mb-1">Phone</label>
-                  <input
-                    id="organizerPhone"
-                    v-model="currentEvent.organizerPhone"
-                    type="tel"
-                    class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-            
-            <!-- Event Agenda -->
-            <div>
-              <h3 class="text-lg font-semibold mb-4">Agenda</h3>
-              <Card v-for="(item, index) in currentEvent.agenda" :key="index" class="mb-3">
-                <CardContent class="p-3 flex space-x-4">
-                  <div class="w-1/3">
-                    <label :for="`agenda-time-${index}`" class="block text-sm font-medium mb-1">Time</label>
+              </CardContent>
+            </Card>
+            <Button 
+              type="button" 
+              variant="outline" 
+              class="mt-2"
+              @click="currentEvent.agenda.push({ time: '', title: '' })"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Agenda Item
+            </Button>
+          </div>
+          
+          <!-- Event Speakers -->
+          <div>
+            <h3 class="text-lg font-semibold mb-4">Speakers</h3>
+            <Card v-for="(speaker, index) in currentEvent.speakers" :key="index" class="mb-4">
+              <CardContent class="p-4">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label :for="`speaker-name-${index}`" class="block text-sm font-medium mb-1">Name</label>
                     <input
-                      :id="`agenda-time-${index}`"
-                      v-model="item.time"
+                      :id="`speaker-name-${index}`"
+                      v-model="speaker.name"
                       type="text"
-                      placeholder="Time (e.g., 10:00 AM)"
                       class="w-full px-3 py-2 border border-input rounded-md bg-background"
                       required
                     />
-                  </div>
-                  <div class="flex-1">
-                    <label :for="`agenda-title-${index}`" class="block text-sm font-medium mb-1">Activity</label>
-                    <input
-                      :id="`agenda-title-${index}`"
-                      v-model="item.title"
-                      type="text"
-                      placeholder="Activity title"
-                      class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                      required
-                    />
-                  </div>
-                  <div class="flex items-end">
-                    <Button 
-                      type="button" 
-                      variant="destructive" 
-                      size="sm"
-                      @click="currentEvent.agenda.splice(index, 1)"
-                      :disabled="currentEvent.agenda.length <= 1"
-                      class="h-10"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-              <Button 
-                type="button" 
-                variant="outline" 
-                class="mt-2"
-                @click="currentEvent.agenda.push({ time: '', title: '' })"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                Add Agenda Item
-              </Button>
-            </div>
-            
-            <!-- Event Speakers -->
-            <div>
-              <h3 class="text-lg font-semibold mb-4">Speakers</h3>
-              <Card v-for="(speaker, index) in currentEvent.speakers" :key="index" class="mb-4">
-                <CardContent class="p-4">
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label :for="`speaker-name-${index}`" class="block text-sm font-medium mb-1">Name</label>
-                      <input
-                        :id="`speaker-name-${index}`"
-                        v-model="speaker.name"
-                        type="text"
-                        class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label :for="`speaker-title-${index}`" class="block text-sm font-medium mb-1">Title/Position</label>
-                      <input
-                        :id="`speaker-title-${index}`"
-                        v-model="speaker.title"
-                        type="text"
-                        class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                        required
-                      />
-                    </div>
-                    
-                    <div>
-                      <label :for="`speaker-image-${index}`" class="block text-sm font-medium mb-1">Image URL</label>
-                      <input
-                        :id="`speaker-image-${index}`"
-                        v-model="speaker.image"
-                        type="text"
-                        class="w-full px-3 py-2 border border-input rounded-md bg-background"
-                        placeholder="https://example.com/speaker.jpg"
-                        required
-                      />
-                    </div>
                   </div>
                   
-                  <div class="flex justify-end mt-4">
-                    <Button 
-                      type="button" 
-                      variant="destructive"
-                      size="sm" 
-                      @click="currentEvent.speakers.splice(index, 1)"
-                      :disabled="currentEvent.speakers.length <= 1"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                      </svg>
-                      Remove Speaker
-                    </Button>
+                  <div>
+                    <label :for="`speaker-title-${index}`" class="block text-sm font-medium mb-1">Title/Position</label>
+                    <input
+                      :id="`speaker-title-${index}`"
+                      v-model="speaker.title"
+                      type="text"
+                      class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                      required
+                    />
                   </div>
-                </CardContent>
-              </Card>
-              <Button 
-                type="button" 
-                variant="outline" 
-                class="mt-2"
-                @click="currentEvent.speakers.push({ name: '', title: '', image: '' })"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                Add Speaker
-              </Button>
-            </div>
-            
-            <!-- Form Buttons -->
-            <div class="flex justify-end space-x-4 pt-4 border-t border-border">
-              <Button type="button" variant="outline" @click="cancelForm">
-                Cancel
-              </Button>
-              <Button type="submit">
-                {{ isEditing ? 'Update Event' : 'Create Event' }}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
-    </div>
+                  
+                  <div>
+                    <label :for="`speaker-image-${index}`" class="block text-sm font-medium mb-1">Image URL</label>
+                    <input
+                      :id="`speaker-image-${index}`"
+                      v-model="speaker.image"
+                      type="text"
+                      class="w-full px-3 py-2 border border-input rounded-md bg-background"
+                      placeholder="https://example.com/speaker.jpg"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div class="flex justify-end mt-4">
+                  <Button 
+                    type="button" 
+                    variant="destructive"
+                    size="sm" 
+                    @click="currentEvent.speakers.splice(index, 1)"
+                    :disabled="currentEvent.speakers.length <= 1"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Remove Speaker
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+            <Button 
+              type="button" 
+              variant="outline" 
+              class="mt-2"
+              @click="currentEvent.speakers.push({ name: '', title: '', image: '' })"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+              </svg>
+              Add Speaker
+            </Button>
+          </div>
+
+          <DialogFooter class="pt-4 border-t border-border">
+            <Button type="button" variant="outline" @click="cancelForm">
+              Cancel
+            </Button>
+            <Button type="submit">
+              {{ isEditing ? 'Update Event' : 'Create Event' }}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>

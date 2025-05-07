@@ -2,9 +2,16 @@ import path from 'node:path'
 import tailwindcss from '@tailwindcss/vite'
 import vue from '@vitejs/plugin-vue'
 import { defineConfig } from 'vite'
+import checker from 'vite-plugin-checker'
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss()],
+  plugins: [
+    vue(),
+    tailwindcss(),
+    checker({
+      typescript:true,
+    }),
+  ],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -20,5 +27,9 @@ export default defineConfig({
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+  },
+  // Add optimizeDeps section to better handle Vue 3 types
+  optimizeDeps: {
+    include: ['vue', 'vue-router', 'pinia'],
   },
 })

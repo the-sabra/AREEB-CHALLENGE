@@ -6,10 +6,11 @@ import { Card, CardContent } from '@/components/ui/card'
 import { RangeCalendar } from '@/components/ui/range-calendar'
 import { toast } from 'vue-sonner'
 import { useRouter } from 'vue-router'
-import type {  Event, EventCategory, DateFilterOption } from '@/types/event'
+import type { Event, EventCategory } from '@/types/event'
+import type { Ref } from 'vue'
 
 const router = useRouter()
-const events = ref<Event[]>([])
+const events: Ref<Event[]> = ref([])
 const filteredEvents = ref<Event[]>([])
 const loading = ref<boolean>(true)
 const error = ref<string>('')
@@ -58,13 +59,14 @@ onMounted(async () => {
     // TODO: Add API call to fetch events
     // const response = await fetch('/api/events')
     // events.value = await response.json()
-    
+    // Safely access user name with soptional chaining
+
     // For now, use sample data with a slight delay to simulate API call
     setTimeout(() => {
       events.value = [ 
         {
         id: 1,
-        title: 'Tech Conference 2023',
+        title: ' Event',
         description: 'Join us for the annual Tech Conference where industry leaders share insights and trends.',
         date: '2023-10-15',
         time: '10:00 AM - 5:00 PM',
@@ -89,6 +91,9 @@ onMounted(async () => {
         description: 'Browse upcoming events and register for those you like!'
       })
     }, 800)
+
+    console.log('after Events:', events.value)
+
   } catch (err) {
     error.value = 'Failed to load events. Please try again later.'
     toast.error('Failed to load events', {
@@ -116,15 +121,8 @@ const filterEvents = () => {
     // Check if the event matches the date filter
     let matchesDateFilter = true
     const eventDate = new Date(event.date)
-    const today = new Date()
     
-    if (dateFilter.value !== 'all') {
-      matchesDateFilter = 
-        (dateFilter.value === 'today' && isToday(eventDate)) ||
-        (dateFilter.value === 'thisWeek' && isThisWeek(eventDate)) ||
-        (dateFilter.value === 'thisMonth' && isThisMonth(eventDate)) ||
-        (dateFilter.value === 'upcoming' && eventDate > today)
-    }
+ 
     
     // Check if the event falls within the selected date range
     let matchesDateRange = true
@@ -162,30 +160,6 @@ const clearDateRange = () => {
   dateRange.value = {}
   filterEvents()
   showRangeCalendar.value = false
-}
-
-// Helper functions for date filtering
-const isToday = (date: Date) => {
-  const today = new Date()
-  return date.getDate() === today.getDate() &&
-    date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
-}
-
-const isThisWeek = (date: Date) => {
-  const today = new Date()
-  const startOfWeek = new Date(today)
-  startOfWeek.setDate(today.getDate() - today.getDay())
-  const endOfWeek = new Date(startOfWeek)
-  endOfWeek.setDate(startOfWeek.getDate() + 6)
-  
-  return date >= startOfWeek && date <= endOfWeek
-}
-
-const isThisMonth = (date: Date) => {
-  const today = new Date()
-  return date.getMonth() === today.getMonth() &&
-    date.getFullYear() === today.getFullYear()
 }
 
 // Watch for changes in search query, category, and date filter
@@ -248,12 +222,14 @@ setupClickOutside()
 <template>
   <div>
     <!-- Header -->
-    <div class="mb-8">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
-        <i class="pi pi-calendar-plus mr-3 text-primary"></i>
-        Upcoming Events
-      </h1>
-      <p class="text-gray-600 dark:text-gray-400 mt-2">Discover and join exciting events in your area</p>
+    <div class="mb-8 flex justify-between items-start">
+      <div>
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+          <i class="pi pi-calendar-plus mr-3 text-primary"></i>
+          Upcoming Events
+        </h1>
+        <p class="text-gray-600 dark:text-gray-400 mt-2">Discover and join exciting events in your area</p>
+      </div>
     </div>
     
     <!-- Filter and Search -->

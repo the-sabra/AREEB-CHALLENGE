@@ -25,41 +25,28 @@ const handleLogin = async () => {
       password: password.value
     }
     
-    // In a real application, this is how we would make the API call
-    // const response = await api.post<AuthResponse>('/auth/login', loginData, { requiresAuth: false })
-    // localStorage.setItem('token', response.token)
-    // localStorage.setItem('isAdmin', response.user.isAdmin.toString())
+    const response = await api.post<AuthResponse>('/auth/login', loginData, { requiresAuth: false })
     
-    // For now, we'll simulate a successful login
-    setTimeout(() => {
-      // Store the token (will be replaced with actual token from API)
-      localStorage.setItem('token', 'sample-jwt-token')
-      
-      // Check if user is admin (will be determined from API response)
-      const isAdmin = email.value.includes('admin')
-      if (isAdmin) {
-        localStorage.setItem('isAdmin', 'true')
-        // Show success notification
-        toast.success('Welcome back, Admin!', {
-          description: 'You have been redirected to the admin dashboard.'
-        })
-        // Redirect admin users to the admin dashboard
-        router.push('/admin')
-      } else {
-        localStorage.setItem('isAdmin', 'false')
-        // Show success notification
-        toast.success('Login successful!', {
-          description: 'Welcome back to Event Hub.'
-        })
-        // Redirect regular users to events page
-        router.push('/events')
-      }
-      
-      loading.value = false
-    }, 1000)
-  } catch (err) {
-    error.value = 'Login failed. Please check your credentials.'
-    toast.error('Login failed', {
+    localStorage.setItem('token', response.token)
+    localStorage.setItem('isAdmin', response.user.is_admin.toString())
+    
+    // Redirect based on user role
+    if (response.user.is_admin) {
+      toast.success(`Welcome back, ${response.user.name}!`, {
+        description: 'You have been redirected to the admin dashboard.'
+      })
+      router.push('/admin')
+    } else {
+      toast.success(`Welcome back, ${response.user.name}!`, {
+        description: 'Welcome back to Event Hub.'
+      })
+      router.push('/events')
+    }
+    
+    loading.value = false
+  } catch (err: any) { 
+    // Handle error cases
+    toast.error(err, {
       description: 'Please check your credentials and try again.'
     })
     loading.value = false

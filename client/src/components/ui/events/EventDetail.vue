@@ -3,6 +3,9 @@ import { ref, onMounted, computed } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent } from '@/components/ui/card'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { toast } from 'vue-sonner'
 import { useRoute, useRouter } from 'vue-router'
 import { Event, AvailabilityStatus } from '@/types/event'
@@ -15,6 +18,9 @@ const loading = ref<boolean>(true)
 const error = ref<string>('')
 const isRegistering = ref<boolean>(false)
 const registrationSuccess = ref<boolean>(false)
+
+const showShareDialog = ref<boolean>(false)
+const showRegisterDialog = ref<boolean>(false)
 
 // Sample events data - will be replaced with API call
 const sampleEvents: Event[] = [
@@ -242,39 +248,32 @@ const getCategoryIcon = (category: string): string => {
 }
 
 // Register for the event
-const registerForEvent = async () => {
+const registerForEvent = () => {
+  if (!event.value) return
+  
+  showRegisterDialog.value = true
+}
+
+const confirmRegistration = () => {
+  if (!event.value) return
+  
   isRegistering.value = true
   
-  try {
-    // TODO: Add API call to register for the event
-    // const response = await fetch(`/api/events/${eventId.value}/register`, {
-    //   method: 'POST',
-    //   headers: {
-    //     'Content-Type': 'application/json',
-    //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-    //   }
-    // })
-    
-    // Simulate successful registration
-    setTimeout(() => {
-      registrationSuccess.value = true
-      isRegistering.value = false
-      
-      // Update attendee count (this would come from the API response in a real app)
-      if (event.value) {
-        event.value.attendees += 1
-        toast.success('Registration successful!', {
-          description: `You have registered for ${event.value.title}. We look forward to seeing you there!`
-        })
-      }
-    }, 1000)
-  } catch (err) {
-    error.value = 'Failed to register for the event. Please try again.'
-    toast.error('Registration failed', {
-      description: 'Please try again later.'
-    })
+  // Simulate API call
+  setTimeout(() => {
     isRegistering.value = false
-  }
+    registrationSuccess.value = true
+    showRegisterDialog.value = false
+    
+    // Update the event's attendees count
+    if (event.value) {
+      event.value.attendees += 1
+    }
+    
+    toast.success('Registration successful', {
+      description: `You have successfully registered for ${event.value?.title}`
+    })
+  }, 1500)
 }
 
 // Navigate back to events list
@@ -284,21 +283,17 @@ const goBack = () => {
 
 // Share event with others
 const shareEvent = () => {
-  if (navigator.share) {
-    navigator.share({
-      title: event.value.title,
-      text: `Check out this event: ${event.value.title}`,
-      url: window.location.href
-    })
-    .then(() => toast.success('Shared successfully'))
-    .catch(() => toast.error('Share cancelled'))
-  } else {
-    // Copy link to clipboard as fallback
-    navigator.clipboard.writeText(window.location.href)
-    toast.success('Event link copied to clipboard', {
-      description: 'You can now share it with others'
-    })
-  }
+  showShareDialog.value = true
+}
+
+// Get speaker initials for avatar fallback
+const getSpeakerInitials = (name: string): string => {
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .substring(0, 2)
 }
 </script>
 
@@ -309,6 +304,101 @@ const shareEvent = () => {
       <i class="pi pi-arrow-left mr-2"></i>
       Back to Events
     </Button>
+    
+    <!-- Share Dialog -->
+    <Dialog v-model:open="showShareDialog">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Share This Event</DialogTitle>
+          <DialogDescription>
+            Choose how you would like to share this event with others.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 py-4">
+          <Button variant="outline" class="flex flex-col items-center p-4 h-auto" @click="() => {
+            navigator.clipboard.writeText(window.location.href);
+            toast.success('Link copied to clipboard');
+            showShareDialog = false;
+          }">
+            <i class="pi pi-copy text-xl mb-2"></i>
+            <span>Copy Link</span>
+          </Button>
+          
+          <Button variant="outline" class="flex flex-col items-center p-4 h-auto" @click="() => {
+            window.open(`https://wa.me/?text=${encodeURIComponent(`Check out this event: ${event?.title} - ${window.location.href}`)}`, '_blank');
+            showShareDialog = false;
+          }">
+            <i class="pi pi-whatsapp text-xl mb-2 text-green-500"></i>
+            <span>WhatsApp</span>
+          </Button>
+          
+          <Button variant="outline" class="flex flex-col items-center p-4 h-auto" @click="() => {
+            window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`, '_blank');
+            showShareDialog = false;
+          }">
+            <i class="pi pi-facebook text-xl mb-2 text-blue-600"></i>
+            <span>Facebook</span>
+          </Button>
+          
+          <Button variant="outline" class="flex flex-col items-center p-4 h-auto" @click="() => {
+            window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(`Check out this event: ${event?.title}`)}&url=${encodeURIComponent(window.location.href)}`, '_blank');
+            showShareDialog = false;
+          }">
+            <i class="pi pi-twitter text-xl mb-2 text-blue-400"></i>
+            <span>Twitter</span>
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    
+    <!-- Registration Dialog -->
+    <Dialog v-model:open="showRegisterDialog">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Register for {{ event?.title }}</DialogTitle>
+          <DialogDescription>
+            Confirm your registration for this event. You can cancel your registration later if needed.
+          </DialogDescription>
+        </DialogHeader>
+        
+        <div class="py-4">
+          <div class="flex items-center justify-between mb-4 p-3 bg-muted rounded-md">
+            <div class="flex items-center">
+              <i class="pi pi-ticket-fill text-primary mr-2 text-lg"></i>
+              <span class="font-medium">Ticket Price:</span>
+            </div>
+            <span class="text-xl font-bold">${{ event?.price }}</span>
+          </div>
+          
+          <div class="flex items-center justify-between mb-4 p-3 bg-muted rounded-md">
+            <div class="flex items-center">
+              <i class="pi pi-calendar text-primary mr-2 text-lg"></i>
+              <span class="font-medium">Event Date:</span>
+            </div>
+            <span>{{ event?.date }} at {{ event?.time }}</span>
+          </div>
+          
+          <p class="text-sm text-muted-foreground italic">
+            By registering, you agree to the event terms and conditions.
+          </p>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" @click="showRegisterDialog = false">Cancel</Button>
+          <Button @click="confirmRegistration" :disabled="isRegistering">
+            <span v-if="isRegistering">
+              <svg class="animate-spin -ml-1 mr-2 h-4 w-4 inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Processing...
+            </span>
+            <span v-else>Confirm Registration</span>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     
     <!-- Loading State -->
     <div v-if="loading" class="flex justify-center items-center py-20">
@@ -345,14 +435,21 @@ const shareEvent = () => {
           </div>
           
           <!-- Share Button -->
-          <Button 
-            @click="shareEvent" 
-            variant="outline" 
-            size="icon" 
-            class="absolute top-4 right-4 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/30"
-          >
-            <i class="pi pi-share-alt"></i>
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button 
+                  @click="shareEvent" 
+                  variant="outline" 
+                  size="icon" 
+                  class="absolute top-4 right-4 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white border-white/30"
+                >
+                  <i class="pi pi-share-alt"></i>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>Share Event</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </Card>
       
@@ -385,9 +482,12 @@ const shareEvent = () => {
               <div>
                 <h2 class="text-2xl font-bold mb-4">Speakers & Presenters</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <Card v-for="(speaker, index) in event.speakers" :key="index" class="overflow-hidden">
+                  <Card v-for="(speaker, index) in event.speakers" :key="index" class="overflow-hidden hover:shadow-md transition-shadow">
                     <div class="p-4 flex flex-col items-center text-center">
-                      <img :src="speaker.image" :alt="speaker.name" class="w-20 h-20 rounded-full object-cover mb-3" />
+                      <Avatar class="w-16 h-16 mb-3">
+                        <AvatarImage :src="speaker.image" :alt="speaker.name" />
+                        <AvatarFallback>{{ getSpeakerInitials(speaker.name) }}</AvatarFallback>
+                      </Avatar>
                       <h3 class="font-semibold text-lg">{{ speaker.name }}</h3>
                       <p class="text-sm text-muted-foreground">{{ speaker.title }}</p>
                     </div>

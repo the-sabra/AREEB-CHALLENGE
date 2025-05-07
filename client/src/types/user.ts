@@ -5,8 +5,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  isAdmin: boolean;
-  registeredEvents: number[];
+  is_admin: number;
   createdAt: string;
 }
 

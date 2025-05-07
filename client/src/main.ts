@@ -10,6 +10,8 @@ import Admin from '@/components/ui/admin/Admin.vue'
 import AdminEventManagement from '@/components/ui/admin/AdminEventManagement.vue'
 import AdminUserManagement from '@/components/ui/admin/AdminUserManagement.vue'
 import { Toaster } from '@/components/ui/sonner'
+import { createPinia } from 'pinia'
+import { useAuthStore } from '@/stores/auth'
 
 const routes = [
   { path: '/', component: AuthTabs },
@@ -53,33 +55,60 @@ const router = createRouter({
   routes,
 })
 
+// Create Pinia instance
+const pinia = createPinia()
+
+// Create app and use Pinia BEFORE setting up navigation guards
+const app = createApp(App)
+app.use(pinia)
+
 // Navigation guards for authentication
-router.beforeEach((to, from, next) => {
-  const isAuthenticated = localStorage.getItem('token') !== null
-  const isAdmin = localStorage.getItem('isAdmin') === 'true'
+router.beforeEach(async (to, from, next) => {
+  // Get auth store instance
+  const authStore = useAuthStore()
+  
+  // Check if we need to verify authentication status
+  if (!authStore.isAuthenticated) {
+    // Try to restore session from token in localStorage
+    await authStore.checkAuth()
+  }
   
   // Check if the route requires authentication
   if (to.matched.some(record => record.meta.requiresAuth)) {
-    if (!isAuthenticated) {
+    if (!authStore.isAuthenticated) {
       // Redirect to login if not authenticated
       next({ path: '/' })
-    } else if (to.matched.some(record => record.meta.requiresAdmin) && !isAdmin) {
+      return
+    } 
+    
+    // Check admin requirement
+    if (to.matched.some(record => record.meta.requiresAdmin) && !authStore.isAdmin) {
       // If route requires admin access but user is not admin, redirect to events page
       next({ path: '/events' })
-    } else {
-      next()
+      return
     }
+    
+    // User is authenticated and has required permissions
+    next()
   } else {
-    // For non-auth routes (login/auth), redirect to events if already logged in
-    if (isAuthenticated && to.path === '/') {
-      next({ path: '/events' })
-    } else {
-      next()
+    // For non-auth routes (login/register)
+    if (authStore.isAuthenticated) {
+      if (authStore.currentUser?.is_admin && to.path === '/') {
+        next({ path: '/admin' })
+        return
+      } else if (!authStore.currentUser?.is_admin && to.path === '/') {
+        next({ path: '/events' })
+        return
+      }
     }
+    
+    // Allow access to non-auth routes
+    next()
   }
 })
 
-const app = createApp(App)
+// Add router and register global components
 app.use(router)
 app.component('Toaster', Toaster)
+
 app.mount('#app')

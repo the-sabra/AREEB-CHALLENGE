@@ -3,37 +3,25 @@ import { Button } from '@/components/ui/button'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
 import { Toaster } from '@/components/ui/sonner'
 import { toast } from 'vue-sonner'
-import { onMounted, ref } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useAuthStore } from '@/stores/auth'
+import { storeToRefs } from 'pinia'
 
 const router = useRouter()
+const authStore = useAuthStore()
 
-// Store the authentication state
-const isAuthenticated = ref(false)
-const isAdmin = ref(false)
+// Use storeToRefs to maintain reactivity for store state
+const { isAuthenticated, isAdmin } = storeToRefs(authStore)
 
-// This will be replaced with actual auth checking logic
-onMounted(() => {
-  // TODO: Add API call to check authentication status
-  const token = localStorage.getItem('token')
-  if (token) {
-    isAuthenticated.value = true
-    // Check if user is admin - will be replaced with proper role check
-    isAdmin.value = localStorage.getItem('isAdmin') === 'true'
-  }
+// Initialize authentication state when the app loads
+onMounted(async () => {
+  await authStore.checkAuth()
 })
 
-const logout = () => {
-  // TODO: Add API call to logout
-  localStorage.removeItem('token')
-  localStorage.removeItem('isAdmin')
-  isAuthenticated.value = false
-  isAdmin.value = false
-  
-  // Show success toast
+const logout = async () => {
+  await authStore.logout()
   toast.success('Successfully logged out')
-  
-  // Use router to navigate to login page
   router.push('/')
 }
 </script>

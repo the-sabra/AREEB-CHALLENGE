@@ -2,10 +2,10 @@
 import { ref } from 'vue'
 import { Button } from '@/components/ui/button'
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card'
-import { Toaster } from '@/components/ui/sonner'
 import { useRouter } from 'vue-router'
-import { RegisterRequest, ApiResponse } from '@/types/user'
+import type { RegisterRequest } from '@/types/user'
 import { toast } from 'vue-sonner'
+import { api } from '@/lib/api'
 
 const name = ref<string>('')
 const email = ref<string>('')
@@ -37,29 +37,21 @@ const handleRegister = async () => {
       password: password.value
     }
     
-    // TODO: Add API call for registration
-    // This is a placeholder for the actual registration logic
-    // const response = await fetch('/api/auth/register', {
-    //   method: 'POST',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify(registerData)
-    // })
-    // const result: ApiResponse = await response.json()
+    // Make API call using our axios-based api client
+    await api.post('/auth/register', registerData, { requiresAuth: false })
     
-    // For now, we'll simulate a successful registration
-    setTimeout(() => {
-      // Show success notification
-      toast.success('Registration successful!', {
-        description: 'Your account has been created. Please sign in.'
-      })
-      // Redirect to login page after successful registration
-      router.push('/')
-      loading.value = false
-    }, 1000)
-  } catch (err) {
-    error.value = 'Registration failed. Please try again.'
+    // Show success notification
+    toast.success('Registration successful!', {
+      description: 'Your account has been created. Please sign in.'
+    })
+    
+    // Redirect to login page after successful registration
+    router.push('/')
+    loading.value = false
+  } catch (err: any) {
+    error.value = err.response?.data?.message || 'Registration failed. Please try again.'
     toast.error('Registration failed', {
-      description: 'Please try again later.'
+      description: err.response?.data?.message || 'Please try again later.'
     })
     loading.value = false
   }

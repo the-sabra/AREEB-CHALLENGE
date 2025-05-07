@@ -5,7 +5,8 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { toast } from 'vue-sonner'
 import { useRouter } from 'vue-router'
-import { LoginRequest, RegisterRequest } from '@/types/user'
+import type { LoginRequest, RegisterRequest, AuthResponse } from '@/types/user'
+import { api } from '@/lib/api'
 
 // Login state
 const loginEmail = ref<string>('')
@@ -40,39 +41,30 @@ const handleLogin = async () => {
       password: loginPassword.value
     }
 
-    // TODO: Add API call for authentication
-    // This is a placeholder for the actual authentication logic
+    // Make API call using our axios-based api client
+    const response = await api.post<AuthResponse>('/auth/login', loginData, { requiresAuth: false })
+
+    localStorage.setItem('token', response.token)
+    localStorage.setItem('isAdmin', (response.user.is_admin === 1).toString())
     
-    // For now, we'll simulate a successful login
-    setTimeout(() => {
-      // Store the token (will be replaced with actual token from API)
-      localStorage.setItem('token', 'sample-jwt-token')
-      
-      // Check if user is admin (will be determined from API response)
-      const isAdmin = loginEmail.value.includes('admin')
-      if (isAdmin) {
-        localStorage.setItem('isAdmin', 'true')
-        // Show success notification
-        toast.success('Welcome back, Admin!', {
-          description: 'You have been redirected to the admin dashboard.'
-        })
-        // Redirect admin users to the admin dashboard
-        router.push('/admin')
-      } else {
-        localStorage.setItem('isAdmin', 'false')
-        // Show success notification
-        toast.success('Login successful!', {
-          description: 'Welcome back to Event Hub.'
-        })
-        // Redirect regular users to events page
-        router.push('/events')
-      }
-      
-      loginLoading.value = false
-    }, 1000)
-  } catch (err) {
+    // Redirect based on user role
+    if (response.user.is_admin) {
+      toast.success(`Welcome back, ${response.user.name}!`, {
+        description: 'You have been redirected to the admin dashboard.'
+      })
+      router.push('/admin')
+    } else {
+      toast.success(`Welcome back, ${response.user.name}!`, {
+        description: 'Welcome back to Event Hub.'
+      })
+      router.push('/events')
+    }
+    
+    loginLoading.value = false
+  } catch (err:any) {
+    console.log("Login error:", err)
     loginError.value = 'Login failed. Please check your credentials.'
-    toast.error('Login failed', {
+    toast.error(err.response?.data.message , {
       description: 'Please check your credentials and try again.'
     })
     loginLoading.value = false
@@ -101,26 +93,24 @@ const handleRegister = async () => {
       password: registerPassword.value
     }
 
-    // TODO: Add API call for registration
-    // This is a placeholder for the actual registration logic
+    // Make API call using our axios-based api client
+    await api.post('/auth/register', registerData, { requiresAuth: false })
     
-    // For now, we'll simulate a successful registration
-    setTimeout(() => {
-      // Show success notification
-      toast.success('Registration successful!', {
-        description: 'Your account has been created. You can now log in.'
-      })
-      // Switch to login tab after successful registration
-      activeTab.value = 'login'
-      registerLoading.value = false
-      
-      // Pre-fill login email with the registered email for convenience
-      loginEmail.value = registerEmail.value
-    }, 1000)
-  } catch (err) {
-    registerError.value = 'Registration failed. Please try again.'
+    // Show success notification
+    toast.success('Registration successful!', {
+      description: 'Your account has been created. You can now log in.'
+    })
+    
+    // Switch to login tab after successful registration
+    activeTab.value = 'login'
+    registerLoading.value = false
+    
+    // Pre-fill login email with the registered email for convenience
+    loginEmail.value = registerEmail.value
+  } catch (err: any) {
+    registerError.value = err.response?.data?.message || 'Registration failed. Please try again.'
     toast.error('Registration failed', {
-      description: 'Please try again later.'
+      description: err.response?.data?.message || 'Please try again later.'
     })
     registerLoading.value = false
   }

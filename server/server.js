@@ -3,6 +3,8 @@ import { connect } from './config/db.js';
 import * as dotenv from 'dotenv';
 import AuthRouter from './routes/auth.routes.js';
 import UserRouter from './routes/user.routes.js';
+import EventRouter from './routes/event.routes.js';
+import BookingRouter from './routes/booking.routes.js';
 import { errorHandler } from './middleware/error.handler.js';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -22,9 +24,12 @@ const port = process.env.PORT || 3000;
 // Middleware for logging HTTP requests
 app.use(morgan('combined'));
   
+app.use(express.urlencoded()); 
 // Middleware for parsing JSON bodies
 app.use(express.json());
-  
+
+
+
 // Middleware for enabling CORS
 app.use(cors({
       origin:"*"
@@ -38,6 +43,8 @@ app.use(helmet());
     
 app.use('/auth', AuthRouter); 
 app.use('/users', UserRouter);
+app.use('/events', EventRouter);
+app.use('/bookings', BookingRouter);
 
 app.use(errorHandler); 
 

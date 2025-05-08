@@ -76,7 +76,6 @@ class User {
         try {
             const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
             const row = stmt.get(id);
-            console.log(row);
             return row ? new User(row) : null;
         } catch (error) {
             logger.error("Error fetching user", error);

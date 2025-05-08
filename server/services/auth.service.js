@@ -1,6 +1,6 @@
 import userService from "./user.service.js";
 import User from "../models/user.model.js";
-import { ApiResponse } from "../utils/apiResponse.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 import bcrypt from 'bcrypt';
 import jwt from '../utils/jwt.js';
 

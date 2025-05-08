@@ -1,5 +1,6 @@
 import  authService from '../services/auth.service.js';
-import { ApiResponse } from "../utils/apiResponse.js";
+import { ApiResponse } from '../utils/ApiResponse.js';
+
 
 class AuthController {
     async register(req, res, next) {

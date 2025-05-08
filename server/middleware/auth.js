@@ -1,6 +1,6 @@
 import jwt from '../utils/jwt.js';
 import userService from '../services/user.service.js';
-import { ApiResponse } from '../utils/apiResponse.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 import * as dotenv from 'dotenv';
 dotenv.config(); 
 

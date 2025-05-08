@@ -16,7 +16,6 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value && (tokenExpiry.value ? tokenExpiry.value > Date.now() : true))
   const isAdmin = computed(() => {
     if (!user.value) return false
-    console.log('user.value', (user.value as any).user.is_admin)
     return (user.value as any).user.is_admin == 1;
   })
   const currentUser = computed(() => user.value)

@@ -6,16 +6,48 @@ import { Card, CardContent } from '@/components/ui/card'
 import { RangeCalendar } from '@/components/ui/range-calendar'
 import { toast } from 'vue-sonner'
 import { useRouter } from 'vue-router'
-import type { Event, EventCategory } from '@/types/event'
+import type { Category } from '@/types/event'
 import type { Ref } from 'vue'
+import { api } from '@/lib/api'
+
+// Updated interfaces for API responses
+interface ApiEvent {
+  id: number
+  title: string
+  description: string
+  date: string
+  time: string
+  location_link: string
+  image: string
+  price: number
+  capacity: number
+  attendees: number
+  categoryId: number
+  category: {
+    id: number
+    name: string
+  }
+  organizer: {
+    id: number
+    name: string
+  }
+}
+
+interface EventListResponse {
+  events: ApiEvent[]
+}
+
+interface CategoryResponse {
+  categories: Category[]
+}
 
 const router = useRouter()
-const events: Ref<Event[]> = ref([])
-const filteredEvents = ref<Event[]>([])
+const events: Ref<ApiEvent[]> = ref([])
+const filteredEvents = ref<ApiEvent[]>([])
 const loading = ref<boolean>(true)
 const error = ref<string>('')
 const searchQuery = ref<string>('')
-const selectedCategory = ref<string>('all')
+const selectedCategory = ref<string>('All Categories') // Changed from 'all' to 'All Categories'
 const dateFilter = ref<string>('all') // 'all', 'upcoming', 'today', 'thisWeek', 'thisMonth'
 
 // Date range picker state
@@ -32,97 +64,95 @@ const formattedDateRange = computed(() => {
   return `${fromDate} - ${toDate}`
 })
 
-// Sample categories for filtering
-const categories: EventCategory[] = [
-  { value: 'all', label: 'All Categories' },
-  { value: 'conference', label: 'Conferences' },
-  { value: 'workshop', label: 'Workshops' },
-  { value: 'concert', label: 'Concerts' },
-  { value: 'exhibition', label: 'Exhibitions' },
-  { value: 'seminar', label: 'Seminars' }
-]
+// Categories for filtering
+const categories = ref<Category[]>([]);
 
-// Get icon for each category
-const getCategoryIcon = (category: string): string => {
+// Fix the getCategories method syntax
+async function getCategories() {
+  try {
+    const catResponse = await api.get<CategoryResponse>('/events/categories')
+    categories.value = catResponse.categories;
+
+    if (!categories.value.find(cat => cat.name === 'All Categories')) {
+      categories.value.unshift({
+        id: 0,
+        name: 'All Categories',
+      });
+    }
+    
+    // Make sure 'All Categories' is selected by default
+    selectedCategory.value = 'All Categories';
+  } catch (err) {
+    console.error('Failed to load categories:', err);
+    toast.error('Failed to load categories');
+  }
+}
+
+// Get category icon based on category value
+function getCategoryIcon(category: string): string {
   const iconMap: Record<string, string> = {
-    conference: 'users',
-    workshop: 'briefcase',
-    concert: 'volume-2',
-    exhibition: 'image',
-    seminar: 'book'
+    music: 'music',
+    sports: 'flag',
+    conference: 'briefcase',
+    workshop: 'cog',
+    social: 'users',
+    art: 'image',
+    food: 'shopping-bag',
+    technology: 'desktop',
+    health: 'heart',
+    business: 'briefcase',
+    education: 'book',
+    entertainment: 'video',
+    charity: 'heart',
+    all: 'list'
   }
   return iconMap[category] || 'tag'
 }
 
 onMounted(async () => {
   try {
-    // TODO: Add API call to fetch events
-    // const response = await fetch('/api/events')
-    // events.value = await response.json()
-    // Safely access user name with soptional chaining
-
-    // For now, use sample data with a slight delay to simulate API call
-    setTimeout(() => {
-      events.value = [ 
-        {
-        id: 1,
-        title: ' Event',
-        description: 'Join us for the annual Tech Conference where industry leaders share insights and trends.',
-        date: '2023-10-15',
-        time: '10:00 AM - 5:00 PM',
-        endDate: '2023-10-15',
-        endTime: '5:00 PM',
-        location: 'San Francisco, CA',
-        address: '123 Tech St, San Francisco, CA 94103',
-        image: 'https://placehold.co/600x400/3498db/FFFFFF?text=Tech+Conference',
-        category: 'conference',
-        price: 19,
-        attendees: 150,
-        capacity: 300,
-        organizer: 'Tech Corp',
-        tags: ['technology', 'networking', 'innovation'], 
-        }, 
-      ] 
-      
-      // Initialize filtered events with all events
-      filterEvents()
-      loading.value = false
-      toast.success('Events loaded', {
-        description: 'Browse upcoming events and register for those you like!'
-      })
-    }, 800)
-
-    console.log('after Events:', events.value)
-
+    loading.value = true;
+    await getCategories();
+    const eventsResponse = await api.get<EventListResponse>('/events');
+    
+    if (eventsResponse && eventsResponse.events) {
+      events.value = eventsResponse.events;
+      filterEvents();
+    } else {
+      throw new Error('Invalid response format');
+    }
   } catch (err) {
-    error.value = 'Failed to load events. Please try again later.'
+    console.error('Error loading events:', err);
+    error.value = 'Failed to load events. Please try again later.';
     toast.error('Failed to load events', {
       description: 'Please try again later.'
-    })
-    loading.value = false
+    });
+  } finally {
+    loading.value = false;
   }
 })
 
 // Filter events based on search query, category, and date filter
 const filterEvents = () => {
-  if (!events.value.length) return
+  if (!events.value.length) {
+    filteredEvents.value = [];
+    return;
+  }
   
   filteredEvents.value = events.value.filter(event => {
     // Check if the event matches the search query
     const matchesSearch = searchQuery.value === '' || 
       event.title.toLowerCase().includes(searchQuery.value.toLowerCase()) || 
       event.description.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      event.location.toLowerCase().includes(searchQuery.value.toLowerCase())
+      event.location_link.toLowerCase().includes(searchQuery.value.toLowerCase());
     
     // Check if the event matches the selected category
-    const matchesCategory = selectedCategory.value === 'all' || 
-      event.category === selectedCategory.value
+    const matchesCategory = selectedCategory.value === 'All Categories' || 
+      event.category.name === selectedCategory.value;
     
     // Check if the event matches the date filter
     let matchesDateFilter = true
     const eventDate = new Date(event.date)
-    
- 
     
     // Check if the event falls within the selected date range
     let matchesDateRange = true
@@ -142,11 +172,11 @@ const filterEvents = () => {
       }
     }
     
-    return matchesSearch && matchesCategory && matchesDateFilter && matchesDateRange
-  })
+    return matchesSearch && matchesCategory && matchesDateFilter && matchesDateRange;
+  });
   
   // Sort events by date (nearest first)
-  filteredEvents.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+  filteredEvents.value.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
 // Handle date range update
@@ -297,26 +327,28 @@ setupClickOutside()
         <div class="flex flex-wrap gap-2">
           <Button
             v-for="category in categories"
-            :key="category.value"
-            :variant="selectedCategory === category.value ? 'default' : 'outline'"
-            @click="selectedCategory = category.value"
+            :key="category.id"
+            :variant="selectedCategory === category.name ? 'default' : 'outline'"
+            @click="selectedCategory = category.name"
             class="whitespace-nowrap"
             size="sm"
           >
-            <i :class="`pi pi-${getCategoryIcon(category.value)} mr-1`" v-if="category.value !== 'all'"></i>
+            <i :class="`pi pi-${getCategoryIcon(category.name)} mr-1`" v-if="category.name !== 'all'"></i>
             <i class="pi pi-list mr-1" v-else></i>
-            {{ category.label }}
+            {{ category.name }}
           </Button>
         </div>
       </CardContent>
     </Card>
     
-    <!-- Loading State -->
-    <div v-if="loading" class="flex justify-center items-center py-20">
-      <div class="inline-flex items-center px-4 py-2 font-semibold leading-6 text-primary">
-        <i class="pi pi-spin pi-spinner mr-2 text-xl"></i>
-        Loading events...
+    <!-- Loading State - Enhanced with better spinner -->
+    <div v-if="loading" class="flex flex-col justify-center items-center py-20">
+      <div class="relative w-16 h-16 mb-4">
+        <div class="absolute top-0 left-0 w-full h-full border-4 border-primary/30 rounded-full"></div>
+        <div class="absolute top-0 left-0 w-full h-full border-4 border-transparent border-t-primary rounded-full animate-spin"></div>
       </div>
+      <div class="text-lg font-semibold text-primary">Loading events...</div>
+      <p class="text-sm text-muted-foreground mt-2">Please wait while we fetch the latest events</p>
     </div>
     
     <!-- Error State -->
@@ -341,14 +373,23 @@ setupClickOutside()
       >
         <!-- Event Image -->
         <div class="relative">
-          <img :src="event.image" :alt="event.title" class="w-full h-48 object-cover" />
+            <img 
+            v-if="event.image"
+            :src="event.image" 
+            :alt="event.title" 
+            class="w-full h-48 object-cover" 
+            />
           <!-- Category Badge -->
           <Badge class="absolute top-4 left-4 flex items-center">
-            <i :class="`pi pi-${getCategoryIcon(event.category)} mr-1`"></i>
-            {{ event.category.charAt(0).toUpperCase() + event.category.slice(1) }}
+            <i :class="`pi pi-${getCategoryIcon(event.category?.name || 'all')} mr-1`"></i>
+            {{ event.category?.name || 'Uncategorized' }}
           </Badge>
           <!-- Almost Sold Out Badge -->
-          <Badge v-if="isAlmostSoldOut(event.attendees, event.capacity)" variant="destructive" class="absolute top-4 right-4 flex items-center">
+          <Badge 
+            v-if="event.capacity && isAlmostSoldOut(event.attendees || 0, event.capacity)" 
+            variant="destructive" 
+            class="absolute top-4 right-4 flex items-center"
+          >
             <i class="pi pi-exclamation-circle mr-1"></i>
             Almost Sold Out
           </Badge>
@@ -356,50 +397,62 @@ setupClickOutside()
         
         <!-- Event Info -->
         <CardContent class="p-5">
-          <div class="flex justify-between items-start mb-3">
+            <div class="flex justify-between items-start mb-3">
             <div>
               <h3 class="text-xl font-bold truncate" :title="event.title">
-                {{ event.title }}
+              {{ event.title }}
               </h3>
               <p class="text-muted-foreground text-sm flex items-center">
-                <i class="pi pi-calendar mr-1"></i>
-                {{ formatDate(event.date) }} • {{ event.time }}
+              <i class="pi pi-calendar mr-1"></i>
+              {{ formatDate(event.date) }} {{ event.time ? '• ' + event.time : '' }}
               </p>
             </div>
             <div class="text-xl font-bold text-primary flex items-center">
-              <i class="pi pi-dollar mr-1"></i>${{ event.price }}
+              <span v-if="event.price > 0" class="text-xl">
+              <i class="pi pi-dollar text-xl mr-1"></i>{{ event.price.toFixed(2) }}
+              </span>
+              <span v-else class="text-green-600">Free</span>
+            </div>
+            </div>
+          
+          <!-- Event description -->
+          <p class="text-foreground mb-4 line-clamp-2" :title="event.description">
+            {{ event.description || 'No description available' }}
+          </p>
+          
+          <!-- Event details row -->
+          <div class="grid grid-cols-2 gap-3 mb-4">
+            <!-- Location -->
+            <div class="flex items-center text-sm text-muted-foreground">
+              <div class="w-7 h-7 bg-primary/10 rounded-full flex items-center justify-center mr-2">
+                <i class="pi pi-map-marker text-primary"></i>
+              </div>
+              <span class="truncate">{{ event.location_link || 'Location TBD' }}</span>
             </div>
           </div>
           
-          <p class="text-foreground mb-4 line-clamp-2" :title="event.description">
-            {{ event.description }}
-          </p>
-          
-          <!-- Location -->
-          <div class="flex items-center text-muted-foreground text-sm mb-4">
-            <i class="pi pi-map-marker mr-1"></i>
-            {{ event.location }}
-          </div>
-          
           <!-- Availability -->
-          <div class="mb-4">
+          <div v-if="event.capacity" class="mb-4">
             <div class="flex justify-between text-sm mb-1">
               <span class="text-muted-foreground flex items-center">
                 <i class="pi pi-users mr-1"></i>
                 Availability
               </span>
-              <Badge :class="getAvailabilityStatus(event.attendees, event.capacity).color" variant="outline">
-                {{ getAvailabilityStatus(event.attendees, event.capacity).text }}
+              <Badge 
+                :class="getAvailabilityStatus(event.attendees || 0, event.capacity).color" 
+                variant="outline"
+              >
+                {{ getAvailabilityStatus(event.attendees || 0, event.capacity).text }}
               </Badge>
             </div>
             <div class="bg-muted rounded-full h-2">
               <div 
                 class="bg-primary h-2 rounded-full" 
-                :style="`width: ${calculateAvailability(event.attendees, event.capacity)}%`"
+                :style="`width: ${calculateAvailability(event.attendees || 0, event.capacity)}%`"
               ></div>
             </div>
             <div class="text-xs text-muted-foreground text-right mt-1">
-              {{ event.attendees }} / {{ event.capacity }} spots taken
+              {{ event.attendees || 0 }} / {{ event.capacity }} spots taken
             </div>
           </div>
           

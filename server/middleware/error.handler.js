@@ -1,5 +1,5 @@
 import logger from "../config/logger.js";
-import { ApiResponse } from "../utils/apiResponse.js";
+import { ApiResponse } from "../utils/ApiResponse.js";
 
 export class AppError extends Error {
     constructor(message, statusCode) {

@@ -1,4 +1,3 @@
-import { ApiResponse } from '../utils/apiResponse.js';
 
 export const checkUserPermission = (req, res, next) => {
     const requestedUserId = req.params.userId;

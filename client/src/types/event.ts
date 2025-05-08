@@ -16,47 +16,68 @@ export interface EventSpeaker {
 }
 
 /**
- * Main Event interface
+ * Interface for event category in API response
+ */
+export interface Category {
+  id: number;
+  name: string;
+}
+
+/**
+ * Interface for API event structure
+ */
+export interface ApiEvent {
+  id: number;
+  name: string;
+  image: string | null;
+  description: string;
+  date: string;
+  venue: string;
+  location_link: string;
+  category_id: string;
+  created_at: string;
+  tags: string[];
+  category: Category;
+}
+
+/**
+ * Interface for pagination data
+ */
+export interface Pagination {
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  hasMore: boolean;
+}
+
+/**
+ * Interface for event list API response
+ */
+export interface EventListResponse {
+  events: ApiEvent[];
+  pagination: Pagination;
+}
+
+/**
+ * Main Event interface (for UI display)
+ * Directly reflecting the structure of ApiEvent
  */
 export interface Event {
   id: number;
-  title: string;
+  name: string;
+  image: string | null;
   description: string;
   date: string;
-  time: string;
-  endDate: string;
-  endTime: string;
-  location: string;
-  address: string;
-  category: string;
-  organizer: string;
-  organizerEmail?: string;
-  organizerPhone?: string;
-  image?: string;
-  price?: number;
-  attendees: number;
-  capacity: number;
+  venue: string;
+  location_link: string;
+  category_id: string;
+  created_at: string;
   tags: string[];
+  category: Category;
 }
 
 /**
- * Interface for event categories
- */
-export interface EventCategory {
-  value: string;
-  label: string;
-}
-
-/**
- * Type for date filter options
- */
-export interface DateFilterOption {
-  value: string;
-  label: string;
-}
-
-/**
- * Interface for availability status
+ * Interface for event details API response
  */
 export interface AvailabilityStatus {
   text: string;

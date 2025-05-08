@@ -1,5 +1,5 @@
 import User from '../models/user.model.js';
-import { ApiResponse } from '../utils/apiResponse.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 
 class UserService {
 

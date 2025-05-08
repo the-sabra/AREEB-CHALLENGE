@@ -1,5 +1,5 @@
 import userService from '../services/user.service.js';
-import { ApiResponse } from '../utils/apiResponse.js';
+import { ApiResponse } from '../utils/ApiResponse.js';
 
 class UserController {
     async createUser(req, res, next) {

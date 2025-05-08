@@ -2,6 +2,8 @@ import Booking from '../models/booking.model.js';
 import Event from '../models/event.model.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import logger from '../config/logger.js';
+import bookingService from '../services/booking.service.js';
+import eventService from '../services/event.service.js';
 
 class BookingController {
     /**
@@ -17,9 +19,13 @@ class BookingController {
             
             const bookingsWithEvents = await Promise.all(
                 bookings.map(async (booking) => {
-                    const event = await booking.getEvent();
+                    // Convert booking to plain object if it's a Mongoose document
+                    const bookingObj = booking.toObject ? booking.toObject() : booking;
+                    // Pass the event ID to get the specific event
+                    const event = await eventService.getEventById(booking.event_id);
+                    
                     return {
-                        ...booking,
+                        ...bookingObj,
                         event: event ? {
                             id: event.id,
                             name: event.name,
@@ -55,7 +61,7 @@ class BookingController {
             const { eventId } = req.params;
             
             // Check if event exists
-            const event = await Event.findById(eventId);
+            const event = await eventService.getEventById(eventId);
             if (!event) {
                 return next(new ApiResponse.error(404, "Event not found"));
             }
@@ -87,7 +93,7 @@ class BookingController {
             const { ticketCount } = req.body;
             
             // Check if event exists
-            const event = await Event.findById(eventId);
+            const event = await bookingService.findById(eventId);
             if (!event) {
                 return next(new ApiResponse(404, "Event not found"));
             }
@@ -99,11 +105,11 @@ class BookingController {
             }
             
             // Check if user already has a booking for this event
-            const existingBooking = await Booking.findByEventAndUser(eventId, userId);
+            const existingBooking = await bookingService.findByEventAndUser(eventId, userId);
             if (existingBooking) {
                 return next(new ApiResponse(400, "You already have a booking for this event"));
             }
-            console.log("ticketCount", ticketCount);
+
             // Create and save the booking
             const booking = new Booking({
                 event_id: eventId,
@@ -130,6 +136,8 @@ class BookingController {
             next(error);
         }
     }
+
+    
 }
 
 // Create a singleton instance

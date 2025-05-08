@@ -87,6 +87,19 @@ class UserService {
      //TODO:filtering by name or email and verifying the user
         return await User.findAll(page,limit,filters);
     }
+
+    async getUserEvents(userId) {
+        try {
+            const user = await User.findById(userId);
+            if (!user) {
+                throw new Error('User not found');
+            }
+            return await user.getEvents();
+        } catch (error) {
+            throw error;
+        }
+    }
+
 }
 
 const userService = new UserService();

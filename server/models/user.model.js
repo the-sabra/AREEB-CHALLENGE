@@ -1,6 +1,8 @@
 import db from '../config/db.js';
 import * as bcrypt from 'bcrypt';
 import logger from '../config/logger.js';
+import Event from './event.model.js'; 
+
 class User {
     constructor({ id, name, email, password, is_admin}) {
         this.id = id;
@@ -176,6 +178,22 @@ class User {
  
      async hashPassword(password) {
         return await bcrypt.hash(password, 10);
+    }
+
+    async getEvents(){
+        try {
+            const stmt = db.prepare(`
+                    SELECT events.* 
+                    FROM events
+                    JOIN bookings ON events.id = bookings.event_id
+                    WHERE bookings.user_id = ?
+                `)
+            const rows = stmt.all(this.id);
+            return rows.map(row => new Event(row));
+        } catch (error) {
+            logger.error("Error fetching user events", error);
+            throw new Error('Error fetching user events');
+        }
     }
 }
  

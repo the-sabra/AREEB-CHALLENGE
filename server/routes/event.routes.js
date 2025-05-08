@@ -23,6 +23,7 @@ router.post('/tags', authenticate, isAdmin, createTagSchema, validate, eventCont
 
 // Event routes
 router.get('/', eventQuerySchema, validate, eventController.getAllEvents);
+router.get('/authed', authenticate, eventQuerySchema, validate, eventController.getAllEventsAuthed);
 router.get('/:eventId', eventIdSchema, validate, eventController.getEvent);
 router.post('/', authenticate, isAdmin, createEventSchema, validate, eventController.createEvent);
 router.put('/:eventId', authenticate, isAdmin, updateEventSchema, validate, eventController.updateEvent);

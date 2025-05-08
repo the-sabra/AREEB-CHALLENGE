@@ -1,5 +1,8 @@
+import bookingService from '../services/booking.service.js';
 import eventService from '../services/event.service.js';
+import userService from '../services/user.service.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
+import bookingController from './booking.controller.js';
 
 
 class EventController {
@@ -204,6 +207,53 @@ class EventController {
                     201,
                     { tag },
                     "Tag created successfully"
+                )
+            );
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * Get all events for authenticated users with booking status
+     * @param {Object} req - Express request object
+     * @param {Object} res - Express response object
+     * @param {Function} next - Express next middleware function
+     */
+    async getAllEventsAuthed(req, res, next) {
+        try {
+            const page = parseInt(req.query.page) || 1;
+            const limit = parseInt(req.query.limit) || 10;
+            
+            // Extract filter parameters from query
+            const filters = {
+                category_id: req.query.category_id,
+                tag_id: req.query.tag_id,
+                search: req.query.search,
+                date_from: req.query.date_from,
+                date_to: req.query.date_to
+            };
+
+            Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
+            
+            const userId = req.user.id; 
+            const result = await eventService.getAllEvents(page, limit, filters);
+            const userEvents = await userService.getUserEvents(userId, filters);
+
+            const eventsWithBookingStatus = result.events.map(event => {
+                const isBooked = userEvents.some(userEvent => userEvent.id === event.id);
+
+                return  { ...event, isBooked: !!isBooked } ;
+            });
+            
+            res.json(
+                ApiResponse.success(
+                    200,
+                    { 
+                        events: eventsWithBookingStatus,
+                        pagination: result.pagination
+                    },
+                    "Events retrieved successfully"
                 )
             );
         } catch (error) {

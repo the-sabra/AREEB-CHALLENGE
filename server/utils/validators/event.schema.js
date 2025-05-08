@@ -47,7 +47,6 @@ export const eventQuerySchema = [
     query('limit').optional().isNumeric().withMessage('Limit must be a number'),
     query('category_id').optional().isNumeric().withMessage('Category ID must be a number'),
     query('tag_id').optional().isNumeric().withMessage('Tag ID must be a number'),
-    query('search').optional().isString(),
     query('date_from').optional().isString(),
     query('date_to').optional().isString(),
 ];

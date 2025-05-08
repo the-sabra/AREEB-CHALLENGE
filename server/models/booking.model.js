@@ -181,23 +181,6 @@ class Booking {
         }
     }
 
-    /**
-     * Find a user's booking for a specific event
-     * @param {number} eventId - The event ID
-     * @param {number} userId - The user ID
-     * @returns {Promise<Booking|null>} The booking or null if not found
-     */
-    static async findByEventAndUser(eventId, userId) {
-        try {
-            const stmt = db.prepare('SELECT * FROM bookings WHERE event_id = ? AND user_id = ?');
-            const row = stmt.get(eventId, userId);
-            
-            return row ? new Booking(row) : null;
-        } catch (error) {
-            logger.error("Error fetching booking by event and user", error);
-            throw error;
-        }
-    }
 
     /**
      * Find all bookings for an event
@@ -234,33 +217,6 @@ class Booking {
     }
 
     /**
-     * Get the event for this booking
-     * @returns {Promise<Event|null>} The event or null
-     */
-    async getEvent() {
-        try {
-            return await Event.findById(this.event_id);
-        } catch (error) {
-            logger.error("Error fetching booking event", error);
-            throw error;
-        }
-    }
-
-    /**
-     * Get the user for this booking
-     * @returns {Promise<Object|null>} The user or null
-     */
-    async getUser() {
-        try {
-            const stmt = db.prepare('SELECT * FROM users WHERE id = ?');
-            return stmt.get(this.user_id);
-        } catch (error) {
-            logger.error("Error fetching booking user", error);
-            throw error;
-        }
-    }
-
-    /**
      * Get available tickets for an event
      * @param {number} eventId - The event ID
      * @returns {Promise<Object>} Object with capacity, booked, and available counts
@@ -290,6 +246,18 @@ class Booking {
             return { capacity, booked, available };
         } catch (error) {
             logger.error("Error getting event availability", error);
+            throw error;
+        }
+    }
+    
+    async getEvent(){
+        try {
+            const stmt = db.prepare('SELECT * FROM events WHERE id = ?');
+            const row = stmt.get(this.event_id);
+            
+            return row ? new Event(row) : null;
+        } catch (error) {
+            logger.error("Error fetching event", error);
             throw error;
         }
     }

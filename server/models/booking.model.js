@@ -13,7 +13,7 @@ class Booking {
     constructor({ event_id, user_id, ticket_count }) {
         this.event_id = event_id;
         this.user_id = user_id;
-        this.ticket_count = this.ticket_count || 1; 
+        this.ticket_count = ticket_count || 1; 
     }
 
     /**
@@ -54,8 +54,8 @@ class Booking {
             this.id = insertResult.lastInsertRowid;
 
             // Update event attendees count
-            await Booking.updateEventAttendees(this.event_id);
-            
+            // await this.updateEventAttendees(this.event_id);
+
             return this;
         } catch (error) {
             logger.error("Error saving booking", error);
@@ -100,10 +100,7 @@ class Booking {
             const stmt = db.prepare(query);
             const result = stmt.run(...values);
 
-            // Update event attendees count if status changed
-            if ('status' in updates || 'ticket_count' in updates) {
-                await Booking.updateEventAttendees(this.event_id);
-            }
+
             
             return result.changes > 0 ? this : null;
         } catch (error) {
@@ -159,9 +156,6 @@ class Booking {
             const stmt = db.prepare('DELETE FROM bookings WHERE id = ?');
             const result = stmt.run(this.id);
             
-            if (result.changes > 0) {
-                await Booking.updateEventAttendees(this.event_id);
-            }
             
             return result.changes > 0;
         } catch (error) {
@@ -262,30 +256,6 @@ class Booking {
             return stmt.get(this.user_id);
         } catch (error) {
             logger.error("Error fetching booking user", error);
-            throw error;
-        }
-    }
-
-    /**
-     * Update the attendees count for an event based on bookings
-     * @param {number} eventId - The event ID
-     * @returns {Promise<void>}
-     */
-    static async updateEventAttendees(eventId) {
-        try {
-            const stmt = db.prepare(`
-                SELECT SUM(ticket_count) as total
-                FROM bookings
-                WHERE event_id = ?
-            `);
-            const result = stmt.get(eventId);
-            
-            const attendeesCount = result.total || 0;
-            
-            const updateStmt = db.prepare('UPDATE events SET attendees = ? WHERE id = ?');
-            updateStmt.run(attendeesCount, eventId);
-        } catch (error) {
-            logger.error("Error updating event attendees", error);
             throw error;
         }
     }

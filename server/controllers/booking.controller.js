@@ -84,26 +84,26 @@ class BookingController {
         try {
             const { eventId } = req.params;
             const userId = req.user.id;
-            const { ticketCount = 1 } = req.body;
+            const { ticketCount } = req.body;
             
             // Check if event exists
             const event = await Event.findById(eventId);
             if (!event) {
-                return next(new ApiResponse.error(404, "Event not found"));
+                return next(new ApiResponse(404, "Event not found"));
             }
             
             // Check if the event date has passed
             const eventDate = new Date(event.date);
             if (eventDate < new Date()) {
-                return next(new ApiResponse.error(400, "Cannot book a past event"));
+                return next(new ApiResponse(400, "Cannot book a past event"));
             }
             
             // Check if user already has a booking for this event
             const existingBooking = await Booking.findByEventAndUser(eventId, userId);
             if (existingBooking) {
-                return next(new ApiResponse.error(400, "You already have a booking for this event"));
+                return next(new ApiResponse(400, "You already have a booking for this event"));
             }
-            
+            console.log("ticketCount", ticketCount);
             // Create and save the booking
             const booking = new Booking({
                 event_id: eventId,

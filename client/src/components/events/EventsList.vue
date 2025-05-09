@@ -26,7 +26,7 @@ const itemsPerPage = ref<number>(10)
 const paginationInfo = ref<PaginationData | null>(null)
 
 // Updated interfaces for API responses
-interface ApiEvent {
+export interface ApiEvent {
   id: number
   name: string
   description: string
@@ -37,7 +37,8 @@ interface ApiEvent {
   price: number
   capacity: number
   attendees: number
-  categoryId: number,
+  categoryId: number
+  venue: string
   isBooked: boolean
   category: {
     id: number
@@ -512,7 +513,7 @@ setupClickOutside()
       <Card
         v-for="event in filteredEvents" 
         :key="event.id" 
-        class="overflow-hidden hover:shadow-lg transition-all duration-300 relative border-opacity-80 hover:border-primary"
+        class="overflow-hidden hover:shadow-lg transition-all duration-300 relative border-opacity-80 hover:border-primary flex flex-col"
       >
         <!-- Event Image -->
         <div class="relative">
@@ -554,7 +555,7 @@ setupClickOutside()
         </div>
         
         <!-- Event Info -->
-        <CardContent class="p-5">
+        <CardContent class="p-5 flex flex-col flex-grow">
             <div class="flex justify-between items-start mb-3">
             <div>
               <h3 class="text-xl font-bold truncate" :title="event.name">
@@ -574,15 +575,16 @@ setupClickOutside()
             </div>
           
           <!-- Tags Section -->
-          <div v-if="event.tags && event.tags.length > 0" class="mb-3 flex flex-wrap gap-1.5">
+          <div v-if="event.tags && event.tags.length > 0" class="mb-3 flex flex-wrap gap-1.5 min-h-[28px]">
             <Badge v-for="tag in event.tags" :key="tag.id" variant="secondary" class="px-2 py-0.5 text-xs">
               <i class="pi pi-tag mr-1 text-xs"></i>
               {{ tag.name }}
             </Badge>
           </div>
+          <div v-else class="mb-3 min-h-[28px]"></div>
           
           <!-- Event description -->
-            <div class="mb-4 p-3 bg-muted/40 rounded-md border border-border/50">
+            <div class="mb-4 p-3 bg-muted/40 rounded-md border border-border/50 min-h-[80px]">
             <div class="flex items-start">
               <i class="pi pi-info-circle text-primary mt-1 mr-2"></i>
               <p class="text-foreground line-clamp-2" :title="event.description">
@@ -599,9 +601,9 @@ setupClickOutside()
               </div>
               <span class="truncate">{{ event.location_link || 'Location TBD' }}</span>
             </div>
-          
           </div>
-            <!-- Availability -->
+            
+          <!-- Availability -->
           <div v-if="event.capacity" class="mb-4">
             <div class="flex justify-between text-sm mb-1">
               <span class="text-muted-foreground flex items-center">
@@ -625,6 +627,10 @@ setupClickOutside()
               {{ event.attendees || 0 }} / {{ event.capacity }} spots taken
             </div>
           </div>
+          <div v-else class="mb-4 min-h-[55px]"></div>
+          
+          <!-- Spacer to push button to bottom -->
+          <div class="flex-grow"></div>
           
           <!-- Action Button -->
           <Button 

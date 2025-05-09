@@ -14,16 +14,21 @@ import { createPinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
 
 const routes = [
-  { path: '/', component: AuthTabs },
+  { path: '/', component: EventsList, meta: { requiresAuth: false } }, // Changed to EventsList
   { 
     path: '/events', 
     component: EventsList,
-    meta: { requiresAuth: true } 
+    meta: { requiresAuth: false } 
   },
   { 
     path: '/events/:id', 
     component: EventDetail,
-    meta: { requiresAuth: true }
+    meta: { requiresAuth: false }
+  },
+  {
+    path: '/auth', // Added route for AuthTabs
+    component: AuthTabs,
+    meta: { requiresAuth: false }
   },
   { 
     path: '/admin', 
@@ -63,7 +68,7 @@ const app = createApp(App)
 app.use(pinia)
 
 // Navigation guards for authentication
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   // Get auth store instance
   const authStore = useAuthStore()
   
@@ -77,32 +82,32 @@ router.beforeEach(async (to, from, next) => {
   if (to.matched.some(record => record.meta.requiresAuth)) {
     if (!authStore.isAuthenticated) {
       // Redirect to login if not authenticated
-      next({ path: '/' })
+      next({ path: '/auth' }) // Changed from '/' to '/auth'
       return
     } 
     
     // Check admin requirement
     if (to.matched.some(record => record.meta.requiresAdmin) && !authStore.isAdmin) {
       // If route requires admin access but user is not admin, redirect to events page
-      next({ path: '/events' })
+      next({ path: '/' }) // Changed from '/events' to '/'
       return
     }
     
     // User is authenticated and has required permissions
     next()
   } else {
-    // For non-auth routes (login/register)
-    if (authStore.isAuthenticated) {
-      if (authStore.currentUser?.is_admin && to.path === '/') {
-        next({ path: '/admin' })
-        return
-      } else if (!authStore.currentUser?.is_admin && to.path === '/') {
-        next({ path: '/events' })
-        return
+    // For non-auth routes (e.g., '/', '/events', '/events/:id', '/auth')
+    if (authStore.isAuthenticated && to.path === '/auth') {
+      // If authenticated user tries to access /auth page
+      if (authStore.currentUser?.is_admin) {
+        next({ path: '/admin' }) // Admin goes to admin dashboard
+      } else {
+        next({ path: '/' }) // Non-admin goes to home/events page
       }
+      return
     }
-    
-    // Allow access to non-auth routes
+    // Allow access to non-auth routes for everyone else
+    // (e.g. unauthenticated users on '/', '/events', '/auth'; authenticated users on '/', '/events')
     next()
   }
 })

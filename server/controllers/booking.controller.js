@@ -93,7 +93,7 @@ class BookingController {
             const { ticketCount } = req.body;
             
             // Check if event exists
-            const event = await bookingService.findById(eventId);
+            const event = await eventService.getEventById(eventId);
             if (!event) {
                 return next(new ApiResponse(404, "Event not found"));
             }

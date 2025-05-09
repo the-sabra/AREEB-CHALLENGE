@@ -97,7 +97,7 @@ export const api = {
    * Make a POST request
    */
   post<T>(endpoint: string, data?: any, options?: Omit<RequestOptions, 'method' | 'data'>): Promise<T> {
-    return apiClient<T>(endpoint, { ...options, method: 'POST', data });
+    return apiClient<T>(endpoint, { ...options, method: 'POST', data  });
   },
 
   /**

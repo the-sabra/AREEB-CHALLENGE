@@ -37,7 +37,7 @@ const logout = async () => {
         <nav>
           <ul class="flex items-center space-x-4">
             <li v-if="!isAuthenticated">
-              <router-link to="/" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">Sign In / Register</router-link>
+              <router-link to="/auth" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">Sign In / Register</router-link>
             </li>
             <li v-if="isAuthenticated">
               <router-link to="/events" class="text-gray-600 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white">Events</router-link>

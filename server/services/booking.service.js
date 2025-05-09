@@ -121,7 +121,7 @@ class BookingService {
      */
      async findByEventAndUser(eventId, userId) {
         try {
-            const stmt = db.prepare('SELECT * FROM bookings WHERE event_id = ? AND user_id = ?');
+            const stmt = db.prepare('SELECT b.* FROM bookings b WHERE event_id = ? AND user_id = ?');
             const row = stmt.get(eventId, userId);
             
             return row ? new Booking(row) : null;

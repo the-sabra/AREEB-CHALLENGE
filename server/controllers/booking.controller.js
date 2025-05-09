@@ -137,7 +137,32 @@ class BookingController {
         }
     }
 
-    
+    async getEventBookingsByUser(req, res, next) {
+        try {
+            const { eventId } = req.params;
+            const userId = req.user.id;
+            
+            // Check if event exists
+            const event = await eventService.getEventById(eventId);
+            if (!event) {
+                return next(new ApiResponse(404, "Event not found"));
+            }
+            
+            // Get bookings for the user for this event
+            const bookings = await bookingService.findByEventAndUser(eventId, userId);
+            
+            return res.status(200).json(
+                ApiResponse.success(
+                    200,
+                    bookings,
+                    "User bookings for the event retrieved successfully"
+                )
+            );
+        } catch (error) {
+            logger.error("Error in getEventBookingsByUser", error);
+            next(error);
+        }
+    }
 }
 
 // Create a singleton instance

@@ -10,6 +10,7 @@ const router = express.Router();
 router.use(authenticate);
 
 // User booking routes
+router.get("/:eventId",bookingController.getEventBookingsByUser);
 router.get('/user', bookingController.getUserBookings);
 router.post('/event/:eventId', createBooking, validate, bookingController.createBooking);
 

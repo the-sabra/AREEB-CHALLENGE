@@ -10,6 +10,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/lib/api'
 import type { ApiEvent } from './EventsList.vue'
+import { set } from '@vueuse/core'
 
 const route = useRoute()
 const router = useRouter()
@@ -22,6 +23,7 @@ const registrationSuccess = ref<boolean>(false)
 
 const showShareDialog = ref<boolean>(false)
 const showRegisterDialog = ref<boolean>(false)
+const ticketCount = ref<number>(1)
 
 function copyToClipboard(){
    navigator.clipboard.writeText(window.location.href);
@@ -42,7 +44,6 @@ function shareOnTwitter() {
 onMounted(async () => {
   try {
     const response = await api.get<{event:ApiEvent}>(`/events/${eventId.value}`)
-    console.log('Event details:', response)
     event.value = response.event
     loading.value = false
   } catch (err) {
@@ -72,38 +73,15 @@ const getCategoryIcon = (categoryName: string): string => {
   return iconMap[categoryName.toLowerCase()] || 'tag'
 }
 
-// Register for the event
-const registerForEvent = async () => {
-  const authStore = useAuthStore()
-  if (!authStore.isAuthenticated) {
-    router.push('/auth')
-    toast.info('Please log in to register for events', {
-      description: 'You need to be logged in to register for events.'
-    })
-    return
+const increaseTicketCount = () => {
+  ticketCount.value++;
+};
+
+const decreaseTicketCount = () => {
+  if (ticketCount.value > 1) {
+    ticketCount.value--;
   }
-
-  try{
-    isRegistering.value = true
-    const bookingRequest =await api.post(`/bookings/event/${event.value?.id}`, { ticketCount: 1} ,{requiresAuth: true})
-    console.log('Booking request:', bookingRequest)
-    toast.success('Registration request sent', {
-      description: `You have successfully registered for ${event.value?.name}`
-    })
-    isRegistering.value = false
-    registrationSuccess.value = true
-  }catch (error) {
-    isRegistering.value = false
-    console.error('Error registering for event:', error)
-    toast.error('Error registering for event', {
-      description: 'Please try again later.'
-    })
-  }
-
-  if (!event.value) return
-
-  showRegisterDialog.value = true
-}
+};
 
 const confirmRegistration = async () => {
   if (!event.value) return
@@ -122,20 +100,24 @@ const confirmRegistration = async () => {
 
   try{
     isRegistering.value = true
-    const bookingRequest =await api.post(`/bookings/event/${event.value?.id}`, { ticketCount: 1} ,{requiresAuth: true})
-    console.log('Booking request:', bookingRequest)
+    const ticketCountObj = {
+      ticketCount: ticketCount.value
+    }
+
+    await api.post(`/bookings/event/${event.value?.id}`, ticketCountObj ,{requiresAuth: true})
+
     toast.success('Registration request sent', {
       description: `You have successfully registered for ${event.value?.name}`
     })
     isRegistering.value = false
     registrationSuccess.value = true
-    showRegisterDialog.value = false
+    setTimeout(() => {
+    }, 5000)
+    router.push('/')
   }catch (error) {
     isRegistering.value = false
-    console.error('Error registering for event:', error)
-    toast.error('Error registering for event', {
-      description: 'Please try again later.'
-    })
+    showRegisterDialog.value = false
+    toast.error((error! as any).response.data.message)
   } 
 }
 
@@ -206,10 +188,42 @@ const shareEvent = () => {
             </div>
             <span>{{ event?.date ? formatDate(event.date) : 'N/A' }}</span>
           </div>
-
-          <p class="text-sm text-muted-foreground italic">
-            By registering, you agree to the event terms and conditions.
-          </p>
+          
+          <!-- Ticket Count -->
+          <div class="mb-6 p-4 bg-muted rounded-lg">
+            <label for="ticketCount" class="block text-sm font-medium mb-3">Number of Tickets</label>
+            <div class="flex items-center justify-between border border-input rounded-md bg-background overflow-hidden">
+              <Button 
+                variant="ghost" 
+                @click="decreaseTicketCount" 
+                :disabled="ticketCount <= 1"
+                class="h-9 px-3 rounded-none hover:bg-primary/10"
+              >
+                <i class="pi pi-minus"></i>
+              </Button>
+              
+              <input
+                id="ticketCount"
+                type="number"
+                v-model="ticketCount"
+                class="w-12 text-center border-none focus:ring-0 focus:outline-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [-moz-appearance:textfield]"
+                min="1"
+              />
+              
+              <Button 
+                variant="ghost" 
+                @click="increaseTicketCount"
+                class="h-9 px-3 rounded-none hover:bg-primary/10"
+              >
+                <i class="pi pi-plus"></i>
+              </Button>
+            </div>
+            
+            <div class="flex items-center mt-2 text-sm text-muted-foreground">
+              <i class="pi pi-ticket mr-2"></i>
+              <span>{{ ticketCount }} {{ ticketCount === 1 ? 'ticket' : 'tickets' }}</span>
+            </div>
+          </div>
         </div>
 
         <DialogFooter>

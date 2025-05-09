@@ -25,7 +25,7 @@ const handleLogin = async () => {
       password: password.value
     }
     
-    const response = await api.post<AuthResponse>('/auth/login', loginData, { requiresAuth: false })
+    const response = await api.post<{token: string, user: any}>('/auth/login', loginData, { requiresAuth: false })
     
     localStorage.setItem('token', response.token)
     localStorage.setItem('isAdmin', response.user.is_admin.toString())

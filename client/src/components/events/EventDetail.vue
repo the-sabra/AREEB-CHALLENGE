@@ -9,8 +9,7 @@ import { toast } from 'vue-sonner'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/lib/api'
-import type { ApiEvent } from './EventsList.vue'
-import { set } from '@vueuse/core'
+import type { ApiEvent, EventDetailResponse, } from '@/types/event'
 
 const route = useRoute()
 const router = useRouter()
@@ -43,7 +42,7 @@ function shareOnTwitter() {
 
 onMounted(async () => {
   try {
-    const response = await api.get<{event:ApiEvent}>(`/events/${eventId.value}`)
+    const response = await api.get<EventDetailResponse>(`/events/${eventId.value}`)
     event.value = response.event
     loading.value = false
   } catch (err) {

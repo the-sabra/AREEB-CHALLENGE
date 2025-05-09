@@ -38,11 +38,11 @@ const handleRegister = async () => {
     }
     
     // Make API call using our axios-based api client
-    await api.post('/auth/register', registerData, { requiresAuth: false })
+    const response = await api.post<{success: boolean, message: string}>('/auth/register', registerData, { requiresAuth: false })
     
     // Show success notification
     toast.success('Registration successful!', {
-      description: 'Your account has been created. Please sign in.'
+      description: response.message || 'Your account has been created. Please sign in.'
     })
     
     // Redirect to login page after successful registration

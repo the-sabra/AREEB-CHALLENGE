@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { RangeCalendar } from '@/components/ui/range-calendar'
 import { toast } from 'vue-sonner'
 import { useRouter } from 'vue-router'
-import type { Category , Pagination as PaginationData } from '@/types/event'
+import type { ApiEvent, Category, CategoryResponse, EventListResponse, Pagination } from '@/types/event'
 import type { Ref } from 'vue'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
@@ -23,44 +23,7 @@ const currentPage = ref<number>(1)
 const totalPages = ref<number>(1)
 const totalCount = ref<number>(0)
 const itemsPerPage = ref<number>(10)
-const paginationInfo = ref<PaginationData | null>(null)
-
-// Updated interfaces for API responses
-export interface ApiEvent {
-  id: number
-  name: string
-  description: string
-  date: string
-  time: string
-  location_link: string
-  image: string
-  price: number
-  capacity: number
-  attendees: number
-  categoryId: number
-  venue: string
-  isBooked: boolean
-  category: {
-    id: number
-    name: string
-  },
-  tags:Tags[]
-}
-
-
-interface Tags {
-  id: number
-  name: string
-
-}
-interface EventListResponse {
-  events: ApiEvent[],
-  pagination: PaginationData
-}
-
-interface CategoryResponse {
-  categories: Category[]
-}
+const paginationInfo = ref<Pagination | null>(null)
 
 const router = useRouter()
 const events: Ref<ApiEvent[]> = ref([])
@@ -106,6 +69,7 @@ async function getCategories() {
     toast.error('Failed to load categories');
   }
 }
+
 async function ticketInfo(event: ApiEvent) {
   currentEvent.value = event
   showTicketDialog.value = true

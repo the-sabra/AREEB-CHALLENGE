@@ -1,21 +1,4 @@
 /**
- * Interface for event agenda items
- */
-export interface EventAgendaItem {
-  time: string;
-  title: string;
-}
-
-/**
- * Interface for event speakers
- */
-export interface EventSpeaker {
-  name: string;
-  title: string;
-  image?: string;
-}
-
-/**
  * Interface for event category in API response
  */
 export interface Category {
@@ -24,21 +7,13 @@ export interface Category {
 }
 
 /**
- * Interface for API event structure
+ * Interface for event details in API response
  */
-export interface ApiEvent {
-  id: number;
-  name: string;
-  image: string | null;
-  description: string;
-  date: string;
-  venue: string;
-  location_link: string;
-  category_id: string;
-  created_at: string;
-  tags: string[];
-  category: Category;
+export interface EventListResponse {
+  events: ApiEvent[],
+  pagination: Pagination
 }
+
 
 /**
  * Interface for pagination data
@@ -50,36 +25,44 @@ export interface Pagination {
   hasMore: boolean;
 }
 
-/**
- * Interface for event list API response
- */
-export interface EventListResponse {
-  events: ApiEvent[];
-  pagination: Pagination;
+// Updated interfaces for API responses
+export interface ApiEvent {
+  id: number
+  name: string
+  description: string
+  date: string
+  time: string
+  location_link: string
+  image: string
+  price: number
+  capacity: number
+  attendees: number
+  categoryId: number
+  venue: string
+  isBooked: boolean
+  category: {
+    id: number
+    name: string
+  },
+  tags: Tag[]
 }
 
-/**
- * Main Event interface (for UI display)
- * Directly reflecting the structure of ApiEvent
- */
-export interface Event {
-  id: number;
-  name: string;
-  image: string | null;
-  description: string;
-  date: string;
-  venue: string;
-  location_link: string;
-  category_id: string;
-  created_at: string;
-  tags: string[];
-  category: Category;
+export interface Tag {
+  id: number
+  name: string
 }
 
-/**
- * Interface for event details API response
- */
-export interface AvailabilityStatus {
-  text: string;
-  color: string;
+export interface CategoryResponse {
+  categories: Category[]
 }
+
+export interface EventDetailResponse {
+  event: ApiEvent
+}
+
+export interface BookingResponse {
+  success: boolean
+  message: string
+  ticket_count?: number
+}
+

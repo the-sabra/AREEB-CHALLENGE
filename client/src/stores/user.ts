@@ -24,9 +24,9 @@ export const useUserStore = defineStore('user', () => {
     error.value = null
     
     try {
-      const response = await api.get<User[]>('/admin/users')
-      users.value = response
-      return response
+      const response = await api.get<{users: User[]}>('/admin/users')
+      users.value = response.users
+      return response.users
     } catch (err: any) {
       error.value = err.response?.data?.message || 'Failed to fetch users'
       throw err

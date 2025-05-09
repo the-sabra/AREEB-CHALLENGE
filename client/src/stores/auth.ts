@@ -48,7 +48,7 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     
     try {
-      const response = await api.post<AuthResponse>('/auth/login', credentials)
+      const response = await api.post<{token: string, user: User}>('/auth/login', credentials)
       
       setUserData(response.token, response.user)
       return response

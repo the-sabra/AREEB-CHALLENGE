@@ -1,43 +1,16 @@
 <script setup lang="ts">
-import type { HTMLAttributes, ImgHTMLAttributes } from 'vue'
-import { cn } from '@/lib/utils'
-import { useAvatarContext } from './useAvatarContext'
-import { ref, onMounted, onUnmounted } from 'vue'
+import type { AvatarImageProps } from 'reka-ui'
+import { AvatarImage } from 'reka-ui'
 
-const props = defineProps<{
-  src?: ImgHTMLAttributes['src']
-  alt?: ImgHTMLAttributes['alt']
-  class?: HTMLAttributes['class']
-}>()
-
-const context = useAvatarContext()
-
-const imageRef = ref<HTMLImageElement | null>(null)
-const loaded = ref(false)
-
-function onImageLoadingComplete() {
-  loaded.value = true
-  context?.onImageLoadingComplete()
-}
-
-onMounted(() => {
-  if (imageRef.value?.complete) {
-    loaded.value = true
-    context?.onImageLoadingComplete()
-  }
-})
-
-onUnmounted(() => {
-  context?.onImageLoadingComplete()
-})
+const props = defineProps<AvatarImageProps>()
 </script>
 
 <template>
-  <img
-    ref="imageRef"
-    :src="src"
-    :alt="alt"
-    @load="onImageLoadingComplete"
-    :class="cn('aspect-square h-full w-full', props.class)"
-  />
+  <AvatarImage
+    data-slot="avatar-image"
+    v-bind="props"
+    class="aspect-square size-full"
+  >
+    <slot />
+  </AvatarImage>
 </template>

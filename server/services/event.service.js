@@ -1,5 +1,6 @@
 import Event from '../models/event.model.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
+import { getFileUrl } from '../utils/fileUpload.js';
 
 import logger from '../config/logger.js';
 import db from '../config/db.js';

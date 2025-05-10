@@ -261,8 +261,8 @@ const shareEvent = () => {
       <Card class="overflow-hidden">
         <div class="relative">
             <img 
-            v-if="event.image"
-            :src="event.image" 
+            v-if="event.imageUrl"
+            :src="event.imageUrl" 
             :alt="event.name" 
             class="w-full h-52 object-cover transition-transform duration-500 hover:scale-105" 
             />

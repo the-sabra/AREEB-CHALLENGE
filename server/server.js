@@ -17,7 +17,7 @@ dotenv.config();
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 50 // limit each IP to 50 requests per windowMs
+    max: 100 // limit each IP to 50 requests per windowMs
   });
  
 const port = process.env.PORT || 3000;
@@ -29,7 +29,8 @@ app.use(express.urlencoded());
 // Middleware for parsing JSON bodies
 app.use(express.json());
 
-
+// Serve static files from the public directory
+app.use('/uploads', express.static('public/uploads'));
 
 // Middleware for enabling CORS
 app.use(cors({

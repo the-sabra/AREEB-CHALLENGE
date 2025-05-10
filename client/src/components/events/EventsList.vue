@@ -482,8 +482,8 @@ setupClickOutside()
         <!-- Event Image -->
         <div class="relative">
             <img 
-            v-if="event.image"
-            :src="event.image" 
+            v-if="event.imageUrl"
+            :src="event.imageUrl" 
             :alt="event.name" 
             class="w-full h-52 object-cover transition-transform duration-500 hover:scale-105" 
             />
@@ -727,9 +727,9 @@ setupClickOutside()
           <!-- Event Details -->
           <div class="border border-border rounded-md overflow-hidden">
             <!-- Event Image -->
-            <div v-if="currentEvent.image" class="relative w-full h-48">
+            <div v-if="currentEvent.imageUrl" class="relative w-full h-48">
               <img 
-                :src="currentEvent.image"
+                :src="currentEvent.imageUrl"
                 :alt="currentEvent.name"
                 class="w-full h-full object-cover"
               />              <!-- Category Badge -->

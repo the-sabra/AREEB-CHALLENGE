@@ -5,6 +5,7 @@ import AuthRouter from './routes/auth.routes.js';
 import UserRouter from './routes/user.routes.js';
 import EventRouter from './routes/event.routes.js';
 import BookingRouter from './routes/booking.routes.js';
+import AdminRouter from './routes/admin.routes.js';
 import { errorHandler } from './middleware/error.handler.js';
 import helmet from 'helmet';
 import cors from 'cors';
@@ -45,7 +46,7 @@ app.use('/auth', AuthRouter);
 app.use('/users', UserRouter);
 app.use('/events', EventRouter);
 app.use('/bookings', BookingRouter);
-
+app.use('/admin', AdminRouter);
 app.use(errorHandler); 
 
 app.listen(port, () => {

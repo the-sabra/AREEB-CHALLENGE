@@ -111,58 +111,6 @@ class Booking {
      * Cancel a booking
      * @returns {Promise<Booking>} The cancelled booking
      */
-    async cancel() {
-        try {
-            this.status = 'cancelled';
-            await this.update();
-            
-            // Process waitlist if there is one
-            const Waitlist = (await import('./waitlist.model.js')).default;
-            await Waitlist.processWaitlistForAvailableTickets(this.event_id);
-            
-            return this;
-        } catch (error) {
-            logger.error("Error cancelling booking", error);
-            throw error;
-        }
-    }
-
-    /**
-     * Mark a booking as attended
-     * @returns {Promise<Booking>} The attended booking
-     */
-    async markAttended() {
-        this.status = 'attended';
-        await this.update();
-        return this;
-    }
-
-    /**
-     * Complete payment for a booking
-     * @returns {Promise<Booking>} The booking with completed payment
-     */
-    async completePayment() {
-        this.payment_status = 'completed';
-        await this.update();
-        return this;
-    }
-
-    /**
-     * Delete a booking
-     * @returns {Promise<boolean>} True if successful
-     */
-    async delete() {
-        try {
-            const stmt = db.prepare('DELETE FROM bookings WHERE id = ?');
-            const result = stmt.run(this.id);
-            
-            
-            return result.changes > 0;
-        } catch (error) {
-            logger.error("Error deleting booking", error);
-            throw error;
-        }
-    }
 
     /**
      * Find a booking by ID
@@ -258,6 +206,17 @@ class Booking {
             return row ? new Event(row) : null;
         } catch (error) {
             logger.error("Error fetching event", error);
+            throw error;
+        }
+    }
+
+   static async count(){
+        try {
+            const stmt = db.prepare('SELECT COUNT(*) as count FROM bookings');
+            const row = stmt.get();
+            return row.count;
+        } catch (error) {
+            logger.error("Error fetching booking count", error);
             throw error;
         }
     }

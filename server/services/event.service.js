@@ -216,6 +216,24 @@ class EventService {
             throw new Error('Error creating tag');
         }
     }
+
+    async getEventCount() {
+        try {
+            return await Event.count();
+        } catch (error) {
+            logger.error("Error getting event count", error);
+            throw new Error('Error fetching event count');
+        }
+    }
+
+    async getUpcomingEventsCount() {
+        try {
+            return await Event.UpComingCount();
+        } catch (error) {
+            logger.error("Error getting upcoming events", error);
+            throw new Error('Error fetching upcoming events');
+        }
+    }
 }
 
 // Create a singleton instance

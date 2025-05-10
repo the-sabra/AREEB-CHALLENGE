@@ -379,6 +379,45 @@ class Event {
         }
     }
 
+
+    /**
+     * Retrieves the total number of events in the database.
+     * 
+     * @async
+     * @returns {Promise<number>} The total count of events.
+     * @throws {Error} If there is an error fetching the event count from the database.
+     */
+    static async count() {
+        try {
+            const stmt = db.prepare('SELECT COUNT(*) as count FROM events');
+            const row = stmt.get();
+            return row.count;
+        } catch (error) {
+            logger.error("Error fetching event count", error);
+            throw new Error('Error fetching event count');
+        }
+    }
+
+    /**
+     * Retrieves the count of upcoming events from the database.
+     * An upcoming event is defined as an event with a date greater than or equal to the current date.
+     * 
+     * @async
+     * @returns {Promise<number>} The count of upcoming events.
+     * @throws {Error} If there is an error fetching upcoming events from the database.
+     */
+    static async UpComingCount() {
+        try {
+            const stmt = db.prepare(`SELECT COUNT(*) as count FROM events WHERE date >= datetime('now') AND date <= datetime('now', '+30 days')`);
+            const rows = stmt.all();
+            return rows[0].count;
+        } catch (error) {
+            console.error("Error fetching upcoming events", error);
+            logger.error("Error fetching upcoming events", error);
+            throw new Error('Error fetching upcoming events');
+        }
+    }
+
 }
 
 export default Event;

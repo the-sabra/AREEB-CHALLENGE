@@ -195,6 +195,24 @@ class User {
             throw new Error('Error fetching user events');
         }
     }
+
+    
+    /**
+     * Counts the total number of users in the database
+     * @async
+     * @returns {Promise<number>} The total count of users
+     * @throws {Error} If there's an error fetching the user count from the database
+     */
+    static async count(){
+        try {
+            const stmt = db.prepare('SELECT COUNT(*) as count FROM users');
+            const row = stmt.get();
+            return row.count;
+        } catch (error) {
+            logger.error("Error fetching user count", error);
+            throw new Error('Error fetching user count');
+        }
+    }
 }
  
 export default User;

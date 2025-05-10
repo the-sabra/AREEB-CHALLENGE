@@ -5,12 +5,19 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { toast } from 'vue-sonner'
 import { useRouter, useRoute } from 'vue-router'
+import { api } from '@/lib/api'// Adjust the import based on your API setup
 
+interface Stats {
+  totalEvents: number
+  totalUsers: number
+  registrations: number
+  upcomingEvents: number
+}
 const router = useRouter()
 const route = useRoute()
 
 // Stats summary
-const stats = ref({
+const stats = ref<Stats>({
   totalEvents: 0,
   totalUsers: 0,
   registrations: 0,
@@ -21,27 +28,11 @@ const loading = ref(true)
 
 onMounted(async () => {
   try {
-    // TODO: Replace with actual API calls to fetch admin stats
-    // const response = await fetch('/api/admin/dashboard', {
-    //   headers: {
-    //     'Authorization': `Bearer ${localStorage.getItem('token')}`
-    //   }
-    // })
-    // stats.value = await response.json()
-    
-    // For now, using sample data
-    setTimeout(() => {
-      stats.value = {
-        totalEvents: 12,
-        totalUsers: 356,
-        registrations: 987,
-        upcomingEvents: 8
-      }
-      loading.value = false
-      toast.success('Admin dashboard loaded', {
-        description: 'Welcome to the admin dashboard'
-      })
-    }, 500)
+    const response = await api.get<Stats>("/admin/status",{
+      requiresAuth: true
+    })
+    stats.value = response;
+    loading.value = false
   } catch (err) {
     toast.error('Failed to load dashboard data', {
       description: 'Please try again later'
@@ -139,7 +130,7 @@ const navigateTo = (path: string) => {
                 <i class="pi pi-calendar-plus text-blue-500 text-xl"></i>
               </div>
             </div>
-            <div class="text-3xl font-bold">{{ stats.upcomingEvents }}</div>
+            <div class="text-3xl font-bold">{{ stats.upcomingEvents || 0 }}</div>
             <div class="text-sm text-muted-foreground mt-1">Events in the next 30 days</div>
           </CardContent>
         </Card>

@@ -100,6 +100,15 @@ class UserService {
         }
     }
 
+    async getUserCount(){
+        try {
+            return await User.count();
+        } catch (error) {
+            logger.error("Error getting user count", error);
+            throw new Error('Error fetching user count');
+        }
+    }
+
 }
 
 const userService = new UserService();

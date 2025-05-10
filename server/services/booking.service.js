@@ -154,6 +154,15 @@ class BookingService {
             throw error;
         }
     }
+
+    async getBookingCount(){
+        try {
+            return await Booking.count();
+        } catch (error) {
+            logger.error("Error fetching booking count", error);
+            throw error;
+        }
+    }
 }
 
 // Create a singleton instance

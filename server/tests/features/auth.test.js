@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest'
 import authService from '../../services/auth.service.js'
 import userService from '../../services/user.service.js'
 import bcrypt from 'bcrypt'
+import { ApiResponse } from '../../utils/ApiResponse.js'
 
 // Mock dependencies
 vi.mock('../../services/user.service.js')
@@ -68,18 +69,25 @@ describe('Auth Service', () => {
                 password: 'password123'
             })
 
-            expect(result).toHaveProperty('id', mockUser.id)
-            expect(result.password).toBeUndefined()
+            expect(result.user).toHaveProperty('id', mockUser.id)
+            expect(result.user.password).toBeUndefined()
         })
 
         it('should throw error for non-existent user', async () => {
             userService.getUserByEmail.mockResolvedValue(null)
 
-            await expect(authService.login({
-                email: 'nonexistent@example.com',
-                password: 'password123'
-            })).rejects.toThrow('Invalid email or password')
-        })
+            try {
+                await authService.login({
+                    email: 'nonexistent@example.com',
+                    password: 'password123'
+                });
+                expect.fail('Expected ApiResponse to be thrown');
+            } catch (error) {
+                expect(error).toBeInstanceOf(ApiResponse);
+                expect(error.statusCode).toBe(401);
+                expect(error.message).toBe('Invalid email or password');
+            }
+        });
 
         it('should throw error for invalid password', async () => {
             const mockUser = {

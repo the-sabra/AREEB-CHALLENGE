@@ -176,7 +176,7 @@ class EventService {
 
             console.error("Error creating category", error);
             logger.error("Error creating category", error);
-            throw new Error('Error creating category');
+            throw error
         }
     }
 

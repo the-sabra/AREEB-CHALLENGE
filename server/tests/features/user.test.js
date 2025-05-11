@@ -4,10 +4,12 @@ import User from '../../models/user.model.js'
 
 // Mock the User model
 vi.mock('../../models/user.model.js', () => {
-    const MockUser = function(data) {
-        Object.assign(this, data);
-        this.save = vi.fn().mockResolvedValue({ id: 1, ...data });
-    };
+    class MockUser {
+        constructor(data) {
+            Object.assign(this, data);
+            this.save = vi.fn().mockResolvedValue({ id: 1, ...data });
+        }
+    }
     MockUser.findByEmail = vi.fn();
     MockUser.findById = vi.fn();
     MockUser.findAll = vi.fn();
@@ -75,21 +77,6 @@ describe('UserService', () => {
 
             const result = await userService.updateUser(1, updates)
             expect(result.name).toBe('Updated Name')
-            expect(mockUser.update).toHaveBeenCalled()
-        })
-    })
-
-    describe('verifyUser', () => {
-        it('should verify user successfully', async () => {
-            const mockUser = {
-                email: 'test@example.com',
-                is_verified: false,
-                update: vi.fn().mockResolvedValue({ is_verified: true })
-            }
-            User.findByEmail.mockResolvedValue(mockUser)
-
-            const result = await userService.verifyUser('test@example.com')
-            expect(mockUser.is_verified).toBe(true)
             expect(mockUser.update).toHaveBeenCalled()
         })
     })

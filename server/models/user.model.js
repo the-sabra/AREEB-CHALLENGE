@@ -42,10 +42,6 @@ class User {
                 Object.entries(this).filter(([key]) => validFields.includes(key))
             );
             
-            // Convert boolean values to integers for SQLite
-            if ('is_verified' in updates) {
-                updates.is_verified = updates.is_verified ? 1 : 0;
-            }
             if ('is_admin' in updates) {
                 updates.is_admin = updates.is_admin ? 1 : 0;
             }

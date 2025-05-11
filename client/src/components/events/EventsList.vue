@@ -32,8 +32,8 @@ const loading = ref<boolean>(true)
 const error = ref<string>('')
 const searchQuery = ref<string>('')
 const selectedCategory = ref<string>('All Categories') // Changed from 'all' to 'All Categories'
-const dateFilter = ref<string>('all') // 'all', 'upcoming', 'today', 'thisWeek', 'thisMonth'
-const ticketCount = ref<number|null>(null) 
+const ticketCount = ref<number|null>(null)
+ 
 // Date range picker state
 const showRangeCalendar = ref<boolean>(false)
 const dateRange = ref<{start?: Date, end?: Date}>({})
@@ -227,7 +227,7 @@ const clearDateRange = () => {
 }
 
 // Watch for changes in search query, category, and date filter
-watch([searchQuery, selectedCategory, dateFilter], () => {
+watch([searchQuery, selectedCategory], () => {
   filterEvents();
 })
 

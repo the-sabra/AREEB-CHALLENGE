@@ -49,24 +49,6 @@ export interface ApiEvent {
   tags: Tag[]
 }
 
-export interface AddEvent {
-  name: string
-  description: string
-  date: string
-  time?: string
-  location_link: string
-  image: File | null
-  price: number
-  capacity: number
-  attendees: number
-  categoryId: number
-  venue: string
-  isBooked: boolean
-  category_id: number,
-  tags: number[]
-}
-
-
 export interface Tag {
   id: number
   name: string

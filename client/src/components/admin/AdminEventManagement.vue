@@ -4,7 +4,6 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
-import { FileUpload, FileUploadGrid } from '@/components/ui/file-upload'
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table'
 import { toast } from 'vue-sonner'
 import type { Category, CategoryResponse, ApiEvent, EventListResponse, Tag, AddEvent } from '@/types/event'
@@ -12,17 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { useAuthStore } from '@/stores/auth'
 import { api } from '@/lib/api'
-// Add imports for Combobox components
-import { 
-  Combobox, 
-  ComboboxAnchor, 
-  ComboboxInput, 
-  ComboboxList, 
-  ComboboxEmpty, 
-  ComboboxGroup, 
-  ComboboxItem 
-} from '@/components/ui/combobox'
-// Add imports for TagsInput components
 import { 
   TagsInput, 
   TagsInputItem, 
@@ -48,7 +36,6 @@ const error = ref<string>('')
 const showEventDialog = ref<boolean>(false) // Renamed from showEventForm to showEventDialog
 const isEditing = ref<boolean>(false)
 const currentEvent = ref<ApiEvent | null>(null)
-const newEvent = ref<AddEvent | null>(null)
 const showDeleteConfirm = ref<boolean>(false)
 const eventToDelete = ref<number | null>(null)
 const imagePreview = ref<string | null>(null) // Add this for image preview
@@ -138,12 +125,14 @@ onMounted(async () => {
 
 // Create new event
 const createEvent = () => {
-  newEvent.value = {
+  currentEvent.value = {
+    id: 0, // Temporary ID for new event
     name: '',
     description: '',
     date: new Date().toISOString().split('T')[0], // Set today as default date
-    time: '12:00', // Set default time
+    time: '12:00',
     location_link: '',
+    imageUrl: '', // Empty image URL for new event
     image: null,
     price: 0,
     capacity: 100, // Set reasonable default
@@ -152,9 +141,9 @@ const createEvent = () => {
     venue: '',
     isBooked: false,
     category_id: 1, // Default category ID
+    category: { id: 1, name: 'Default' }, // Default category object
     tags: [] // Empty tags array
   }
-  currentEvent.value = newEvent.value as unknown as ApiEvent
   isEditing.value = false
   showEventDialog.value = true
   selectedTags.value = []
@@ -213,7 +202,7 @@ const saveEvent = async (eventData: ApiEvent | AddEvent) => {
       formData.append('location_link', eventData.location_link)
       formData.append('capacity', eventData.capacity.toString())
       formData.append('price', eventData.price.toString())
-      formData.append('category_id', (eventData.categoryId || eventData.category_id).toString())
+      formData.append('category_id', (eventData.categoryId).toString())
       
       // Add image if provided
       if (eventData.image instanceof File) {
@@ -230,7 +219,7 @@ const saveEvent = async (eventData: ApiEvent | AddEvent) => {
       }
       
       // Make API request
-      const response = await api.put(`/events/${eventData.id}`, formData, {
+       await api.put(`/events/${eventData.id}`, formData, {
         requiresAuth: true,
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -256,7 +245,7 @@ const saveEvent = async (eventData: ApiEvent | AddEvent) => {
       formData.append('location_link', eventData.location_link)
       formData.append('capacity', eventData.capacity.toString())
       formData.append('price', eventData.price.toString())
-      formData.append('category_id', (eventData.categoryId || eventData.category_id).toString())
+      formData.append('category_id', (eventData.categoryId).toString())
       
       // Add image if provided
       if (eventData.image instanceof File) {

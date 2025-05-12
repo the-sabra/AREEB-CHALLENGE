@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Table, TableHeader, TableHead, TableRow, TableBody, TableCell } from '@/components/ui/table'
 import { toast } from 'vue-sonner'
-import type { Category, CategoryResponse, ApiEvent, EventListResponse, Tag, AddEvent } from '@/types/event'
+import type { Category, CategoryResponse, ApiEvent, EventListResponse, Tag } from '@/types/event'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip'
 import { useAuthStore } from '@/stores/auth'
@@ -186,7 +186,7 @@ const confirmDelete = async () => {
 }
 
 // Save event (create or update)
-const saveEvent = async (eventData: ApiEvent | AddEvent) => {
+const saveEvent = async (eventData: ApiEvent) => {
   try {
     loading.value = true
       if (isEditing.value && 'id' in eventData) {
@@ -261,8 +261,7 @@ const saveEvent = async (eventData: ApiEvent | AddEvent) => {
         })
       }
       
-      // Make API request
-      const response = await api.post('/events', formData, {
+      await api.post('/events', formData, {
         requiresAuth: true,
         headers: {
           'Content-Type': 'multipart/form-data'
@@ -358,8 +357,8 @@ watch(page, fetchData, { immediate: true })
   <div class="space-y-6">
     <!-- Page Header -->
     <div class="flex justify-between items-center">
-      <div>
-        <h1 class="text-2xl font-bold">Event Management</h1>
+      <div class="py-4">
+        <h1 class="text-2xl  font-bold">Event Management</h1>
         <p class="text-muted-foreground">Create and manage your events</p>
       </div>
       <Button @click="createEvent" class="flex items-center">
@@ -388,131 +387,135 @@ watch(page, fetchData, { immediate: true })
     
     <!-- Event List -->
     <div v-else>
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Event</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Category</TableHead>
-              <TableHead>Attendees</TableHead>
-              <TableHead>Price</TableHead>
-              <TableHead class="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            <TableRow v-for="event in events" :key="event.id" class="hover:bg-muted/50">
-              <TableCell>
-                <div class="flex items-center">
-                    <div class="h-10 w-10 flex-shrink-0">
-                    <img
-                      v-if="event.imageUrl"
-                      :src="event.imageUrl" 
-                      class="h-10 w-10 rounded-full object-cover" 
-                      :alt="event.name" 
-                    />
-                      <Avatar v-else class="h-10 w-10">
-                        <AvatarFallback>{{ event.name.charAt(0) }}</AvatarFallback>
-                      </Avatar>
-                    </div>
-                  <div class="ml-4">
-                    <div class="font-medium">
-                      {{ event.name }}
-                    </div>
-                    <div class="text-sm text-muted-foreground">
-                      {{ event.location_link }}
+      <!-- Show table and pagination only when there are events -->
+      <template v-if="events!.length > 0">
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Event</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Category</TableHead>
+                <TableHead>Attendees</TableHead>
+                <TableHead>Price</TableHead>
+                <TableHead class="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              <TableRow v-for="event in events" :key="event.id" class="hover:bg-muted/50">
+                <TableCell>
+                  <div class="flex items-center">
+                      <div class="h-10 w-10 flex-shrink-0">
+                      <img
+                        v-if="event.imageUrl"
+                        :src="event.imageUrl" 
+                        class="h-10 w-10 rounded-full object-cover" 
+                        :alt="event.name" 
+                      />
+                        <Avatar v-else class="h-10 w-10">
+                          <AvatarFallback>{{ event.name.charAt(0) }}</AvatarFallback>
+                        </Avatar>
+                      </div>
+                    <div class="ml-4">
+                      <div class="font-medium">
+                        {{ event.name }}
+                      </div>
+                      <div class="text-sm text-muted-foreground">
+                        {{ event.location_link }}
+                      </div>
                     </div>
                   </div>
-                </div>
-              </TableCell>
-              <TableCell>
-                <div>{{ formatDate(event.date) }}</div>
-                <div class="text-sm text-muted-foreground">{{ event.time }}</div>
-              </TableCell>
-              <TableCell>
-                <Badge>
-                  {{ event.category.name.charAt(0).toUpperCase() + event.category.name.slice(1) }}
-                </Badge>
-              </TableCell>
-              <TableCell>
-                <div class="flex flex-col">
-                  <span>{{ event.attendees }} / {{ event.capacity }}</span>
-                  <div class="w-24 bg-muted rounded-full h-1.5 mt-1">
-                    <div 
-                      class="bg-primary h-1.5 rounded-full" 
-                      :style="`width: ${calculateAvailability(event.attendees, event.capacity)}%`"
-                    ></div>
+                </TableCell>
+                <TableCell>
+                  <div>{{ formatDate(event.date) }}</div>
+                  <div class="text-sm text-muted-foreground">{{ event.time }}</div>
+                </TableCell>
+                <TableCell>
+                  <Badge>
+                    {{ event.category.name.charAt(0).toUpperCase() + event.category.name.slice(1) }}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div class="flex flex-col">
+                    <span>{{ event.attendees }} / {{ event.capacity }}</span>
+                    <div class="w-24 bg-muted rounded-full h-1.5 mt-1">
+                      <div 
+                        class="bg-primary h-1.5 rounded-full" 
+                        :style="`width: ${calculateAvailability(event.attendees, event.capacity)}%`"
+                      ></div>
+                    </div>
                   </div>
-                </div>
-              </TableCell>
-              <TableCell>${{ event.price }}</TableCell>
-              <TableCell class="text-right">
-                <div class="flex space-x-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button size="icon" variant="ghost" @click="editEvent(event)">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Edit Event</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
+                </TableCell>
+                <TableCell>${{ event.price }}</TableCell>
+                <TableCell class="text-right">
+                  <div class="flex space-x-2">
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" @click="editEvent(event)">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Edit Event</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
 
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button size="icon" variant="ghost" @click="deleteEvent(event.id)">
-                          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Delete Event</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-              </TableCell>
-            </TableRow>
-          </TableBody>
-        </Table>
-      </Card>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button size="icon" variant="ghost" @click="deleteEvent(event.id)">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-destructive" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Delete Event</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </div>
+                </TableCell>
+              </TableRow>
+            </TableBody>
+          </Table>
+        </Card>
 
-  <!-- Pagination -->
-  <div class="flex justify-center mt-4">
-    <Card class="w-full p-4">
-      <div class="flex justify-between items-center">
-        <p class="text-sm text-muted-foreground">
-          Showing {{ events?.length || 0 }} of {{ totalItems }} events
-        </p>
-        
-        <Pagination
-          v-model:page="page"
-          :items-per-page="itemsPerPage"
-          :total="totalItems"
-          :sibling-count="1"
-          show-edges
-          class="flex items-center gap-1"
-        >
-          <template v-for="(item, index) in Array.from({ length: Math.ceil(totalItems / itemsPerPage) })" :key="index">
-            <Button 
-              :variant="page === index + 1 ? 'default' : 'outline'"
-              class="h-8 w-8 p-0"
-              @click="page = index + 1"
-            >
-              {{ index + 1 }}
-            </Button>
-          </template>
+        <!-- Pagination -->
+        <div class="flex justify-center mt-4">
+          <Card class="w-full p-4">
+            <div class="flex justify-between items-center">
+              <p class="text-sm text-muted-foreground">
+                Showing {{ events!.length }} of {{ totalItems }} events
+              </p>
+              
+              <Pagination
+                v-model:page="page"
+                :items-per-page="itemsPerPage"
+                :total="totalItems"
+                :sibling-count="1"
+                show-edges
+                class="flex items-center gap-1"
+              >
+                <template v-for="(_item, index) in Array.from({ length: Math.ceil(totalItems / itemsPerPage) })" :key="index">
+                  <Button 
+                    :variant="page === index + 1 ? 'default' : 'outline'"
+                    class="h-8 w-8 p-0"
+                    @click="page = index + 1"
+                  >
+                    {{ index + 1 }}
+                  </Button>
+                </template>
 
-          <PaginationNext />
-        </Pagination>
-      </div>
-    </Card>
-  </div>
+                <PaginationNext />
+              </Pagination>
+            </div>
+          </Card>
+        </div>
+      </template>
 
-      <div v-if="events?.length === 0" class="text-center py-10">
+      <!-- No Events State - Only show when there are no events -->
+      <div v-else class="text-center py-10">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-muted-foreground mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
         </svg>

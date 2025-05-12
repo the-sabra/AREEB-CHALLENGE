@@ -6,7 +6,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { toast } from 'vue-sonner'
 import { useRouter } from 'vue-router'
 import type { LoginRequest, RegisterRequest } from '@/types/user'
-import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 
 // store
@@ -24,7 +23,6 @@ const name = ref<string>('')
 const registerEmail = ref<string>('')
 const registerPassword = ref<string>('')
 const confirmPassword = ref<string>('')
-const acceptTerms = ref<boolean>(false)
 const registerLoading = ref<boolean>(false)
 const registerError = ref<string>('')
 

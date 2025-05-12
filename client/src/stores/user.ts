@@ -15,7 +15,7 @@ export const useUserStore = defineStore('user', () => {
   })
   
   const adminUsers = computed(() => {
-    return users.value.filter(user => user.is_admin === 1)
+    return users.value.filter(user => user.is_admin === true)
   })
   
   // Actions
@@ -67,7 +67,8 @@ export const useUserStore = defineStore('user', () => {
       // Update user in store
       const userIndex = users.value.findIndex(user => user.id === userId)
       if (userIndex !== -1) {
-        users.value[userIndex].is_admin = isAdmin ? 1 : 0
+        users.value[userIndex].is_admin = isAdmin ? true : false
+
       }
       
       return true

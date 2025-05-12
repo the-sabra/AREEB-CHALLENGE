@@ -8,7 +8,6 @@ import EventsList from '@/components/events/EventsList.vue'
 import EventDetail from '@/components/events/EventDetail.vue'
 import Admin from '@/components/admin/Admin.vue'
 import AdminEventManagement from '@/components/admin/AdminEventManagement.vue'
-import AdminUserManagement from '@/components/admin/AdminUserManagement.vue'
 import { Toaster } from '@/components/ui/sonner'
 import { createPinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth'
@@ -45,12 +44,6 @@ const routes = [
         component: AdminEventManagement,
         meta: { requiresAuth: true, requiresAdmin: true }
       },
-      { 
-        path: 'users', 
-        name: 'admin-users',
-        component: AdminUserManagement,
-        meta: { requiresAuth: true, requiresAdmin: true }
-      }
     ]
   }
 ]
@@ -100,7 +93,7 @@ router.beforeEach(async (to, _from, next) => {
     if (authStore.isAuthenticated && to.path === '/auth') {
       // If authenticated user tries to access /auth page
       if (authStore.currentUser?.is_admin) {
-        next({ path: '/admin' }) // Admin goes to admin dashboard
+        next({ path: '/admin/events' }) // Admin goes to admin dashboard
       } else {
         next({ path: '/' }) // Non-admin goes to home/events page
       }

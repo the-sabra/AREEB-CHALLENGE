@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { User, LoginRequest, RegisterRequest, AuthResponse } from '@/types/user'
+import type { User, LoginRequest, RegisterRequest } from '@/types/user'
 import { api } from '@/lib/api'
 
 export const useAuthStore = defineStore('auth', () => {
@@ -16,7 +16,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value && (tokenExpiry.value ? tokenExpiry.value > Date.now() : true))
   const isAdmin = computed(() => {
     if (!user.value) return false
-    return (user.value as any).user.is_admin == 1;
+    return user.value.is_admin == true;
   })
   const currentUser = computed(() => user.value)
 
@@ -24,22 +24,9 @@ export const useAuthStore = defineStore('auth', () => {
   function initializeStore() {
     const storedToken = localStorage.getItem('token')
     const storedUser = localStorage.getItem('user')
-    // const storedExpiry = localStorage.getItem('tokenExpiry')
-    // const storedRefreshToken = localStorage.getItem('refreshToken')
-    
+
     if (storedToken) token.value = storedToken
     if (storedUser) user.value = JSON.parse(storedUser)
-    // if (storedExpiry) tokenExpiry.value = parseInt(storedExpiry)
-    // if (storedRefreshToken) refreshToken.value = storedRefreshToken
-    
-    // Check token expiration
-    // if (tokenExpiry.value && tokenExpiry.value <= Date.now()) {
-    //   if (refreshToken.value) {
-    //     refreshAuthToken()
-    //   } else {
-    //     clearUserData()
-    //   }
-    // }
   }
 
   // Actions
@@ -65,7 +52,9 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
     
     try {
-      const response = await api.post('/auth/register', userData)
+      const response = await api.post<{token: string, user: User}>('/auth/register', userData)
+      console.log('Register response:', response)
+      setUserData(response.token, response.user)
       return response
     } catch (err: any) {
       handleError(err, 'Failed to register')
@@ -131,6 +120,8 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+
+  //TODO:will handle refresh Token also
   // async function refreshAuthToken() {
   //   if (!refreshToken.value) return false
     

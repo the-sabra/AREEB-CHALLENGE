@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import './style.css'
 import 'primeicons/primeicons.css';
 import App from './App.vue'
-import AuthTabs from '@/components/ui/AuthTabs.vue'
+import AuthTabs from '@/components/auth/AuthTabs.vue'
 import EventsList from '@/components/events/EventsList.vue'
 import EventDetail from '@/components/events/EventDetail.vue'
 import Admin from '@/components/admin/Admin.vue'

@@ -19,13 +19,14 @@ class User {
             }
             this.password = await this.hashPassword(this.password);
             const stmt = db.prepare(
-                'INSERT INTO users (name, email, password, is_admin) VALUES (?, ?, ?, ?)'
+                'INSERT INTO users (name, email, password) VALUES (?, ?, ?)'
             );
             const result = stmt.run(this.name, this.email, this.password);
             this.id = result.lastInsertRowid;
             this.password = undefined;
             return this; 
         } catch (error) {
+            console.log(error);
             logger.error("Error saving user", error);
             if (error.code === 'SQLITE_CONSTRAINT') {
                 throw new Error('Email already exists');

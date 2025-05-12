@@ -5,7 +5,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
-  is_admin: number;
+  is_admin: boolean;
   createdAt: string;
 }
 

@@ -13,8 +13,9 @@ class AuthService {
                 throw new ApiResponse(404, 'Email already exists');
             }
             const user = new User({ name, email, password });
-            const token = jwt.sign({ userId: user.id });
-            return { user: await user.save(), token };
+            const savedUser = await user.save();
+            const token = jwt.sign({ userId: savedUser.id });
+            return { user: savedUser, token };
         } catch (error) {
             throw error;
         }
@@ -32,15 +33,11 @@ class AuthService {
                 console.error("Invalid password");
                 throw new ApiResponse(401,'Invalid email or password');
             }
-            
-            if(user.is_verified === 0){
-                throw new ApiResponse(405, 'User is not verified');
-            }
-
+        
             const token = jwt.sign({ userId: user.id });
-            const updated = await userService.updateLogin(user.id);
-            updated.password = undefined;
-            return { user:updated , token };
+            
+            user.password = undefined;
+            return { user , token };
         } catch (error) {
             throw error;
         }

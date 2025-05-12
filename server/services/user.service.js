@@ -44,19 +44,6 @@ class UserService {
         }
     }
 
-    async updateLogin(id) {
-        try {
-            const user = await User.findById(id);
-            if (!user) {
-                throw new Error('User not found');
-            }
-            user.login_count+=1;
-            user.last_login_at = new Date();
-            return await user.update();
-        } catch (error) {
-            throw error;
-        }
-    }
 
     async deleteUser(id) {
         try {

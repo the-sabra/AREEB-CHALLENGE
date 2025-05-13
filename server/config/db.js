@@ -1,8 +1,13 @@
 import Database from 'better-sqlite3';
 import * as dotenv from 'dotenv';
+import path from 'path';
 dotenv.config(); 
+
+// Use environment variable for DB path or default to current directory
+const dbPath = process.env.DB_PATH || path.join(process.cwd(), 'store.db');
+console.log(`Using database at: ${dbPath}`);
     
-const db = new Database('store.db', { verbose: console.log });
+const db = new Database(dbPath, { verbose: console.log });
  
 export async function connect() {
     try {

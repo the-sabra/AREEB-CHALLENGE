@@ -8,7 +8,7 @@ class Event {
     /**
      * Create a new Event instance
      * @param {Object} eventData - The event data
-     */    constructor({ id, name, image, description, date, venue, location_link, price, capacity, attendees, category_id, created_at }) {
+     */    constructor({ id, name, image, description, date, time,venue, location_link, price, capacity, attendees, category_id, created_at }) {
         this.id = id;
         this.name = name;
         this.image = image;
@@ -20,6 +20,7 @@ class Event {
         this.created_at = created_at;
         this.price = price;
         this.capacity = capacity;
+        this.time = time;
         this.attendees = attendees || 0;
         this.tags = []; // Will store tag relationships
     }
@@ -33,7 +34,7 @@ class Event {
             if (this.id) {
                 return await this.update();
             }            const stmt = db.prepare(
-                'INSERT INTO events (name, image, description, date, venue, location_link, price, capacity, attendees, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                'INSERT INTO events (name, image, description, date, time, venue, location_link, price, capacity, attendees, category_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             );
             
             // check the category_id exists
@@ -48,6 +49,7 @@ class Event {
                 this.image,
                 this.description,
                 this.date,
+                this.time,
                 this.venue,
                 this.location_link,
                 this.price,
@@ -76,7 +78,7 @@ class Event {
      * @returns {Promise<Event|null>} The updated event or null if not found
      */    async update() {
         try {
-            const validFields = ['name', 'image', 'description', 'date', 'venue', 'location_link', 'price', 'capacity', 'category_id'];
+            const validFields = ['name', 'image', 'description', 'date', 'time','venue', 'location_link', 'price', 'capacity', 'category_id'];
 
             const updates = Object.fromEntries(
                 Object.entries(this).filter(([key]) => validFields.includes(key))

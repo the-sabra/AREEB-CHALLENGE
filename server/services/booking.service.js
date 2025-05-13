@@ -2,7 +2,6 @@ import Booking from '../models/booking.model.js';
 import Event from '../models/event.model.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
 import logger from '../config/logger.js';
-import db from '../config/db.js';
 
 class BookingService {
     /**
@@ -76,6 +75,10 @@ class BookingService {
             if (eventDate < new Date()) {
                 throw new ApiResponse(400, 'Cannot book a past event');
             }
+
+            if(event.attendees + ticketCount >= event.capacity) {
+                throw new ApiResponse(400, 'Not enough tickets available'); 
+            }
             
             // Check if user already has a booking for this event
             const existingBooking = await Booking.findByEventAndUser(eventId, userId);
@@ -121,10 +124,7 @@ class BookingService {
      */
      async findByEventAndUser(eventId, userId) {
         try {
-            const stmt = db.prepare('SELECT b.* FROM bookings b WHERE event_id = ? AND user_id = ?');
-            const row = stmt.get(eventId, userId);
-            
-            return row ? new Booking(row) : null;
+          return await Booking.getBooking(eventId, userId);
         } catch (error) {
             logger.error("Error fetching booking by event and user", error);
             throw error;

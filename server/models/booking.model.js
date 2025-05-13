@@ -220,6 +220,18 @@ class Booking {
             throw error;
         }
     }
+
+    static async getBooking(event_id, user_id) {
+        try {
+            const stmt = db.prepare('SELECT * FROM bookings WHERE event_id = ? AND user_id = ?');
+            const row = stmt.get(event_id, user_id);
+            
+            return row ? new Booking(row) : null;
+        } catch (error) {
+            logger.error("Error fetching booking", error);
+            throw error;
+        }
+    }
 }
 
 

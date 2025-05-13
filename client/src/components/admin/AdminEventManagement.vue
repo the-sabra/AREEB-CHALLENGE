@@ -135,7 +135,7 @@ const createEvent = () => {
     imageUrl: '', // Empty image URL for new event
     image: null,
     price: 0,
-    capacity: 100, // Set reasonable default
+    capacity: 10, // Set reasonable default
     attendees: 0,
     categoryId: 1, // Default category ID
     venue: '',

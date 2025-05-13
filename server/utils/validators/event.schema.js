@@ -16,6 +16,7 @@ export const createEventSchema = [
     body('date').exists().isString().withMessage('Event date is required'),
     body('venue').exists().isString().withMessage('Event venue is required'),
     body('location_link').optional().isString(),
+    body('time').exists().isString().withMessage('Event time is required'),
     body('price').exists().isNumeric().withMessage('Price must be a number'),
     body('capacity').exists().isNumeric().withMessage('Capacity must be a number'),
     body('category_id').exists().isNumeric().withMessage('Category ID is required'),

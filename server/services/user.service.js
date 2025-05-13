@@ -1,5 +1,6 @@
 import User from '../models/user.model.js';
 import { ApiResponse } from '../utils/ApiResponse.js';
+import bookingService from './booking.service.js';
 
 class UserService {
 
@@ -71,7 +72,6 @@ class UserService {
      * @throws {Error} If there is an error retrieving the users
      */
     async getAllUsers(page =1, limit=20,filters) {
-     //TODO:filtering by name or email and verifying the user
         return await User.findAll(page,limit,filters);
     }
 
@@ -93,6 +93,20 @@ class UserService {
         } catch (error) {
             logger.error("Error getting user count", error);
             throw new Error('Error fetching user count');
+        }
+    }
+
+    async isUserBookingEvent(eventId,userId) {
+        try {
+            const booking = await bookingService.findByEventAndUser(eventId, userId);
+            
+            if (!booking) {
+                return false;
+            }
+
+            return true;
+        } catch (error) {
+            return false;
         }
     }
 

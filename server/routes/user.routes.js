@@ -8,6 +8,7 @@ import { checkUserPermission } from '../middleware/user.permission.js';
 const router = express.Router();
 
 router.get('/', authenticate, isAdmin, userQuerySchema, validate, userController.getAllUsers);
+router.get('/event/:eventId', authenticate, userController.getEventIsBooked);
 router.get('/:userId', userIdSchema, validate, userController.getUser);
 router.patch('/:userId', authenticate, checkUserPermission, updateUserSchema, validate, userController.updateUser);
 router.delete('/:userId', authenticate, checkUserPermission, userIdSchema, validate, userController.deleteUser);

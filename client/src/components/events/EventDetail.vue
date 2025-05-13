@@ -11,6 +11,8 @@ import { useAuthStore } from '@/stores/auth'
 import { api } from '@/lib/api'
 import type { ApiEvent, EventDetailResponse, } from '@/types/event'
 
+const authStore = useAuthStore()
+
 const route = useRoute()
 const router = useRouter()
 const eventId = computed<number>(() => Number(route.params.id))
@@ -19,6 +21,7 @@ const loading = ref<boolean>(true)
 const error = ref<string>('')
 const isRegistering = ref<boolean>(false)
 const registrationSuccess = ref<boolean>(false)
+const isBooked = ref<boolean>(false)
 
 const showShareDialog = ref<boolean>(false)
 const showRegisterDialog = ref<boolean>(false)
@@ -40,7 +43,17 @@ function shareOnTwitter() {
   showShareDialog.value = false;
 }
 
+async function isBookedEvent(eventId: number): Promise<void> {
+  const response = await api.get<{ isBooked: boolean }>(`/users/event/${eventId}`, 
+  { requiresAuth: true })
+  isBooked.value = response.isBooked
+}
+
 onMounted(async () => {
+  if(authStore.isAuthenticated){
+    await isBookedEvent(eventId.value)
+  }
+
   try {
     const response = await api.get<EventDetailResponse>(`/events/${eventId.value}`)
     event.value = response.event
@@ -87,8 +100,6 @@ const confirmRegistration = async () => {
 
   
   isRegistering.value = true
-  const authStore = useAuthStore()
-
   if (!authStore.isAuthenticated) {
     router.push('/auth')
     toast.info('Please log in to register for events', {
@@ -346,13 +357,17 @@ const shareEvent = () => {
                 </h3>
                 <div class="flex items-start space-x-3 text-muted-foreground">
                   <i class="pi pi-home mt-0.5 shrink-0 text-lg"></i>
-                  <div>
-                    <p>{{ event.venue }}</p>
-                    <p v-if="event.location_link" class="mt-1">
-                      <a :href="event.location_link" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline text-sm">
-                        View Map <i class="pi pi-external-link ml-1"></i>
-                      </a>
-                    </p>
+                  <div class="flex items-center gap-2">
+                  <span>{{ event.venue }}</span>
+                  <a 
+                    v-if="event.location_link" 
+                    :href="event.location_link" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="text-primary hover:underline text-sm flex items-center"
+                  >
+                    View Map <i class="pi pi-external-link ml-1"></i>
+                  </a>
                   </div>
                 </div>
               </div>
@@ -369,14 +384,15 @@ const shareEvent = () => {
                 <Button
                   @click="showRegisterDialog = true"
                   class="w-full justify-center"
-                  :disabled="isRegistering || registrationSuccess"
+                  :disabled="isRegistering || registrationSuccess || isBooked"
+                  :loading="isRegistering"
                   :variant="registrationSuccess ? 'outline' : 'default'"
                 >
                   <span v-if="isRegistering">
                     <i class="pi pi-spin pi-spinner mr-2"></i>
                     Processing...
                   </span>
-                  <span v-else-if="registrationSuccess">
+                  <span v-else-if="registrationSuccess || isBooked">
                     <i class="pi pi-check mr-2"></i>
                     Registered
                   </span>

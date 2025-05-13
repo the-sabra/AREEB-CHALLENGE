@@ -11,6 +11,7 @@ CREATE TABLE events (
     image VARCHAR(255),
     description TEXT,
     date DATE NOT NULL,
+    time TIME NOT NULL,
     price DECIMAL(10, 2) NOT NULL,
     capacity INT NOT NULL,
     venue VARCHAR(255) NOT NULL,
@@ -18,7 +19,7 @@ CREATE TABLE events (
     location_link VARCHAR(255),
     category_id CHAR(36) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (category_id) REFERENCES category(id) ON DELETE CASCADE
+    FOREIGN KEY (category_id) REFERENCES category (id) ON DELETE CASCADE
 );
 
 CREATE TABLE tags (
@@ -32,8 +33,8 @@ CREATE TABLE event_tags (
     event_id INT NOT NULL,
     tag_id INT NOT NULL,
     PRIMARY KEY (event_id, tag_id),
-    FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-    FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
+    FOREIGN KEY (event_id) REFERENCES events (id) ON DELETE CASCADE,
+    FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE
 );
 
 -- Indexes

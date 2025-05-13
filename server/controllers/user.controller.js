@@ -50,6 +50,17 @@ class UserController {
             next(error); 
         }
     }
+
+    async getEventIsBooked(req, res, next) {
+        try {
+            const { eventId } = req.params;
+            const userId = req.user.id;
+            const isBooked = await userService.isUserBookingEvent(eventId, userId);
+            res.json(ApiResponse.success(200, { isBooked }));
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 // Create a singleton instance

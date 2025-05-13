@@ -1,22 +1,18 @@
--- Active: 1746626921314@@127.0.0.1@3306
--- Fix the syntax errors (trailing commas)
-
-CREATE TABLE users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+CREATE TABLE IF NOT EXISTS users (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(255) NOT NULL,
     email VARCHAR(255) NOT NULL UNIQUE,
     password VARCHAR(255) NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    is_admin BOOLEAN DEFAULT FALSE,
+    is_admin BOOLEAN DEFAULT FALSE
 );
 
-CREATE TABLE category (
+CREATE TABLE IF NOT EXISTS category (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(255) NOT NULL UNIQUE
 );
 
-CREATE TABLE events (
+CREATE TABLE IF NOT EXISTS events (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(255) NOT NULL,
     image VARCHAR(255),
@@ -33,14 +29,14 @@ CREATE TABLE events (
     FOREIGN KEY (category_id) REFERENCES category (id) ON DELETE CASCADE
 );
 
-CREATE TABLE tags (
+CREATE TABLE IF NOT EXISTS tags (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name VARCHAR(50) NOT NULL UNIQUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create junction table for the many-to-many relationship
-CREATE TABLE event_tags (
+CREATE TABLE IF NOT EXISTS event_tags (
     event_id INT NOT NULL,
     tag_id INT NOT NULL,
     PRIMARY KEY (event_id, tag_id),
@@ -48,23 +44,7 @@ CREATE TABLE event_tags (
     FOREIGN KEY (tag_id) REFERENCES tags (id) ON DELETE CASCADE
 );
 
-CREATE TRIGGER update_event_attendance
-AFTER INSERT ON bookings
-FOR EACH ROW
-BEGIN
-    UPDATE events
-    SET attendees = (
-                SELECT SUM(ticket_count)
-                FROM bookings
-                WHERE event_id = NEW.event_id
-                )
-    WHERE id = NEW.event_id;
-END;
-
--- Indexes
-CREATE INDEX idx_tags_name ON tags (name);
-
-CREATE TABLE bookings (
+CREATE TABLE IF NOT EXISTS bookings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     event_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
@@ -75,8 +55,10 @@ CREATE TABLE bookings (
     UNIQUE (event_id, user_id)
 );
 
-CREATE INDEX idx_users_created_at ON users (created_at);
+CREATE INDEX IF NOT EXISTS idx_tags_name ON tags (name);
 
-CREATE INDEX idx_bookings_event_id ON bookings (event_id);
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON users (created_at);
 
-CREATE INDEX idx_bookings_user_id ON bookings (user_id);
+CREATE INDEX IF NOT EXISTS idx_bookings_event_id ON bookings (event_id);
+
+CREATE INDEX IF NOT EXISTS idx_bookings_user_id ON bookings (user_id);

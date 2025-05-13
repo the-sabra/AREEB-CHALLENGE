@@ -39,6 +39,26 @@ const runMigrations = async () => {
         console.error('Statement:', statement);
       }
     }
+
+    // run trigger to update the attendance table
+    try {
+      console.log('Creating trigger to update event attendance...');
+      db.exec(`
+      CREATE TRIGGER IF NOT EXISTS update_event_attendance
+      AFTER INSERT ON bookings
+      FOR EACH ROW
+      BEGIN
+            UPDATE events
+            SET attendees = (
+                            SELECT SUM(ticket_count)
+                            FROM bookings
+                            WHERE event_id = NEW.event_id
+                        )
+            WHERE id = NEW.event_id;
+        END;`);
+    } catch (error) {
+      console.error('Error creating trigger:', error.message);
+    }
     
     console.log('Migrations completed successfully!');
   } catch (error) {

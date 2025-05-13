@@ -10,6 +10,3 @@ BEGIN
                 )
     WHERE id = NEW.event_id;
 END;
-
--- drop trigger ADD
-drop trigger update_event_attendance;

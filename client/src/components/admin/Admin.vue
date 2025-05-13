@@ -151,19 +151,6 @@ const navigateTo = (path: string) => {
             <i class="pi pi-calendar mr-2"></i>
             Manage Events
           </button>
-          
-          <button
-            @click="navigateTo('/admin/users')"
-            :class="[
-              'py-4 px-1 border-b-2 font-medium text-sm flex items-center',
-              isActive('/admin/users')
-                ? 'border-primary text-primary font-semibold'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border'
-            ]"
-          >
-            <i class="pi pi-users mr-2"></i>
-            Manage Users
-          </button>
         </nav>
       </div>
       

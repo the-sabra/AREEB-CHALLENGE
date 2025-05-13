@@ -7,7 +7,9 @@
   "scripts": {
     "start:dev": "node --watch server.js",
     "start:prod": "node server.js",
-    "test": "vitest"
+    "test": "vitest",
+    "seed": "node utils/seeders/seedDatabase.js",
+    "migrate": "node utils/seeders/runMigrations.js"
   },
   "keywords": [],
   "author": "",
@@ -26,5 +28,8 @@
     "multer": "1.4.5-lts.2",
     "vitest": "^3.0.4",
     "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "@faker-js/faker": "^9.7.0"
   }
 }

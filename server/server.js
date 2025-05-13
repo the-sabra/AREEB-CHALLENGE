@@ -17,7 +17,8 @@ dotenv.config();
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // limit each IP to 50 requests per windowMs
+    max: 150, // Limit each IP to 150 requests per windowMs
+    message: "Too many requests from this IP, please try again later.",
   });
  
 const port = process.env.PORT || 3000;

@@ -14,6 +14,7 @@ import { rateLimit } from 'express-rate-limit'
 
 const app = express();
 dotenv.config(); 
+const apiRouter = express.Router();
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -43,15 +44,23 @@ app.use(limiter);
     
 // Middleware for adding Helmet security headers
 app.use(helmet());
-    
-app.use('/auth', AuthRouter); 
-app.use('/users', UserRouter);
-app.use('/events', EventRouter);
-app.use('/bookings', BookingRouter);
-app.use('/admin', AdminRouter);
+
+
+
+// Apply specific API routes
+apiRouter.use('/auth', AuthRouter); 
+apiRouter.use('/users', UserRouter);
+apiRouter.use('/events', EventRouter);
+apiRouter.use('/bookings', BookingRouter);
+apiRouter.use('/admin', AdminRouter);
+
+// Mount all routes under /api
+app.use('/api', apiRouter);
+
+// Error handler should be last
 app.use(errorHandler); 
 
 app.listen(port, () => {
      connect(); 
-    console.log(`Server running at http://localhost:${port}`);
+    console.log(`Server running at http://localhost:${port}/api`);
 });

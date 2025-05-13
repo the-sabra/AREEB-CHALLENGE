@@ -252,8 +252,7 @@ Tests are organized into:
 
 ## 🔗 Deployed Links
 
-- API Server: [link]()
-- API Documentation: [link]()
+- API Documentation: [link](https://documenter.getpostman.com/view/22968167/2sB2qUmPnS)
 
 ---
 
